@@ -1,11 +1,14 @@
 package gumfig.com;
-import java.io.*;
-import java.io.FileWriter;
+import gumfig.com.Cpu.Cpu;
+
+import java.io.IOException;
+
 
 public class Main{
-    public static void main(String[] args) throws IOException, MapperException {
-        File game = new File("C://users/Navi/Downloads/Tetris.nes");
-        Rom rom = new Rom(game);
-        System.out.println(rom.toString());
+    public static void main(String[] args) throws MapperException, IOException {
+        Nes nes = new Nes();
+        nes.load("C://users/Navi/Downloads/Tetris.nes");
+        Cpu cpu = new Cpu(nes);
+        System.out.println(nes.rom.toString());
     }
 }

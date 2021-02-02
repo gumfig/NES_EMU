@@ -1,7 +1,7 @@
 package gumfig.com;
 
 public class MapperException extends Exception{
-    MapperException(String m){
+    public MapperException(String m){
         super(m);
     }
 }

@@ -1,5 +1,8 @@
 package gumfig.com;
-import gumfig.com.Cpu;
 
 public class Apu {
+    public Nes nes;
+    Apu(Nes nes){
+        this.nes = nes;
+    }
 }
