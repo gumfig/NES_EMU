@@ -36,19 +36,6 @@ public class RomLoader {
         byte[] data = Files.readAllBytes(game.toPath());
         iNesFormat = data[0] == 'N' && data[1] == 'E' && data[2] == 'S' && data[3] == 0x1A;
         nes2Format = iNesFormat && (data[7] & 0x0C) == 0x08;
-         /*
-         Flags 6
-         76543210
-         ||||||||
-         |||||||+- Mirroring: 0: horizontal (vertical arrangement) (CIRAM A10 = PPU A11)
-         |||||||              1: vertical (horizontal arrangement) (CIRAM A10 = PPU A10)
-         ||||||+-- 1: Cartridge contains battery-backed PRG RAM ($6000-7FFF) or other persistent memory
-         |||||+--- 1: 512-byte trainer at $7000-$71FF (stored before PRG data)
-         ||||+---- 1: Ignore mirroring control or above mirroring bit; instead provide four-screen VRAM
-         ++++----- Lower nybble of mapper number
-         */
-        // 1 1 1 1 1 1 1 1
-        // 2^0 + 2^1 + 2^2 + 2^3...
 
         //Check for valid ines rom
         if (iNesFormat) {

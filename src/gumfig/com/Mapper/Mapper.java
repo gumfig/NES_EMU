@@ -15,6 +15,8 @@ public abstract class  Mapper {
 
     }
     public Nes nes;
+
     public abstract int read(int addr);
     public abstract void write(int addr, int data);
+
 }
