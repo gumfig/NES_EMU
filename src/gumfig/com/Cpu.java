@@ -1,4 +1,4 @@
-package gumfig.com.Cpu;
+package gumfig.com;
 import gumfig.com.Mapper.Mapper;
 import gumfig.com.Nes;
 import java.util.Arrays;

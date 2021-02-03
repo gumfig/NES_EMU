@@ -1,6 +1,5 @@
 package gumfig.com;
 
-import gumfig.com.Cpu.Cpu;
 import gumfig.com.Mapper.Mapper;
 
 import java.io.File;
