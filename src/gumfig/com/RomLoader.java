@@ -92,7 +92,7 @@ public class RomLoader {
                 "Nes 2.0: " + nes2Format + "\n" +
                 "rSize: " + romSize + " * 16kb" + "\n" +
                 "vSize: " + vromSize + " * 8kb" + "\n" +
-                "Mirroring: " + mirror.toString() + "\n" +
+                "Mirroring: " + getMirror().toString() + "\n" +
                 "battery: " + battery + "\n" +
                 "trainer: " + trainer + "\n" +
                 "MapperID: " + id + "\n" +

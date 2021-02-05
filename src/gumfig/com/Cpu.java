@@ -1,7 +1,4 @@
 package gumfig.com;
-
-import java.io.IOException;
-
 public class Cpu {
     public enum Interrupt{
         IRQ,NMI,RESET
@@ -33,16 +30,14 @@ public class Cpu {
         INDIRECT_INDEXED,
         INDEXED_INDIRECT,
         ABSOLUTE_X,
-        ABSOLUTE_Y;
+        ABSOLUTE_Y
     }
     // Read byte at PC
     // OP[byte] -> AddrMode, Cycles
     // Read 0 - 2 more bytes
     // Execute
     // Wait, count cycles, complete
-
     // Instruction(Mode, Size, Cycle);
-
     // S = stkp, P = Status
     public int A, X, Y, S, P, PC;
     public Nes nes;
@@ -50,11 +45,9 @@ public class Cpu {
     public Interrupt interrupt;
     public int[] ram; // 0x1000
     public Instruction instruction;
-
-    public Cpu(Nes nes) throws MapperException, IOException {
+    public Cpu(Nes nes){
         this.nes = nes;
     }
-
     public void reset(){
         // Tried to be as close to the wiki as possible
         instruction = new Instruction(this);
@@ -69,7 +62,6 @@ public class Cpu {
         addrAbs = 0;
         fetched = 0;
     }
-
     void clock(){
         // If no instructions are running
         if(cycles == 0){
@@ -77,12 +69,8 @@ public class Cpu {
             setFlag(Flag.U, true);
             int addCycle = 0;
             switch (instruction.mode) {
-                case IMPLIED, ACCUMULATOR -> {
-                    fetched = A;
-                }
-                case IMMEDIATE -> {
-                    addrAbs = PC++;
-                }
+                case IMPLIED, ACCUMULATOR -> fetched = A;
+                case IMMEDIATE -> addrAbs = PC++;
                 case ZERO_PAGE -> {
                     addrAbs = read(PC++);
                     addrAbs &= 0x00FF;
@@ -127,7 +115,6 @@ public class Cpu {
                     int x = read(PC++);
                     int low = read(x + X) & 0x00FF;
                     int high = read((x + X + 1) & 0x0FF);
-
                     addrAbs = (high << 8) | low;
                 }
                 //Indirect Y
@@ -135,15 +122,12 @@ public class Cpu {
                     int x = read(PC++);
                     int low = read(x & 0x00FF);
                     int high = read((x + 1) & 0x00FF);
-
                     addrAbs = (high << 8) | low;
                     addrAbs += Y;
                     //Check for overflow
                     if((addrAbs & 0xFF00) != (high << 8))
                         addCycle += 1;
-
                 }
-
                 case INDIRECT -> {
                     int low = read(PC++);
                     int high = read(PC++);
@@ -161,7 +145,6 @@ public class Cpu {
         }
         cycles--;
     }
-
     // Fetch data
     public void fetch(){
         //Check if IMPLIED since this mode does nothing
@@ -182,8 +165,12 @@ public class Cpu {
         //The 6502 has hardware support for a stack implemented using a 256-byte array whose location is hardcoded at page $01 ($0100-$01FF), using the S register for a stack pointer.
         write(0x100 + S--, bit);
     }
+    public int popStack(){
+        S++;
+        return read(0x100 + S);
+    }
     public void branch(Flag flag, boolean invert){
-        boolean con = invert ? !getFlag(flag) : getFlag(flag);
+        boolean con = invert != getFlag(flag);
         if(con){
             cycles++;
             addrAbs = PC + addrRel;
@@ -201,7 +188,6 @@ public class Cpu {
     public void setFlag(Flag flag, boolean f){
         P = f ? P | flag.bit : P & ~flag.bit;
     }
-
     @Override
     public String toString() {
         return "----------INSTRUCTIONS-----------" + '\n' +
