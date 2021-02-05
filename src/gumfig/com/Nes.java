@@ -16,13 +16,15 @@ public class Nes {
         //Nothin for now
     }
 
-    public void load(String Path) throws MapperException, IOException {
+    public void load(String Path) throws IOException, MapperException{
         File game = new File(Path);
         rom = new RomLoader(game);
-        // Core component conectivity
         cpu = new Cpu(this);
         apu = new Apu(this);
         ppu = new Ppu(this);
-        mapper = Mapper.getMapper(0);
+        mapper = rom.mapper;
+        mapper.nes = this;
+        cpu.reset();
+        // Core component conectivity
     }
 }

@@ -88,7 +88,8 @@ public class RomLoader {
     }
     @Override
     public String toString() {
-        return "Nes 2.0: " + nes2Format + "\n" +
+        return "--------------ROM----------------" + '\n' +
+                "Nes 2.0: " + nes2Format + "\n" +
                 "rSize: " + romSize + " * 16kb" + "\n" +
                 "vSize: " + vromSize + " * 8kb" + "\n" +
                 "Mirroring: " + mirror.toString() + "\n" +
