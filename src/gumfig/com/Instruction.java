@@ -1,5 +1,7 @@
 package gumfig.com;
+
 import gumfig.com.Cpu.Mode;
+
 public class Instruction {
     // Setup
     public int cycle;
@@ -208,7 +210,7 @@ public class Instruction {
             case 0x99 -> STA(Mode.ABSOLUTE_Y, 5);
             case 0x9D -> STA(Mode.ABSOLUTE_X, 5);
             //STX
-            case 0x86 -> STX(Mode.ZERO_PAGE, XXX
+            case 0x86 -> STX(Mode.ZERO_PAGE, 3);
             case 0x8E -> STX(Mode.ABSOLUTE, 4);
             case 0x96 -> STX(Mode.ZERO_PAGE_Y, 4);
             //STY
@@ -281,42 +283,40 @@ public class Instruction {
             default -> 0;
         };
     }
-    // The 52 instructions + Illegals
+    //
     int ADC(Mode Mode, int Cycle){
-        cpu.fetch();
+        cpu.load();
         //Res = A + c + val
         int sum = cpu.A + (cpu.getFlag(Cpu.Flag.C) ? 1 : 0) + cpu.fetched;
         cpu.setFlag(Cpu.Flag.C, sum > 0xff);
         cpu.setFlag(Cpu.Flag.V, (((cpu.A ^ cpu.fetched) & 0x80) == 0) && (((cpu.A ^ sum) & 0x80) != 0));
         cpu.setFlag(Cpu.Flag.Z,(sum & 0xff) == 0);
-        cpu.setFlag(Cpu.Flag.N, (sum & (1 << 7)) > 0); // Set according to the high bit
+        cpu.setFlag(Cpu.Flag.N, (sum & 0x80) > 0); // Set according to the high bit
         cpu.A = sum & 0xff; mode = Mode; cycle = Cycle;
-        return Cycle;
+        return 1;
     }
+    //
+    int AND(Mode Mode, int Cycle){
+        cpu.load();
+        cpu.A = cpu.fetched & 0xff;
+        cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0); //Check if highbit is activated
+        cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
+        mode = Mode; cycle = Cycle;
+        return 1;
+    }
+    //
     int ASL(Mode Mode, int Cycle){
-        cpu.fetch();
+        cpu.load();
         int val = cpu.fetched << 1;
         cpu.setFlag(Cpu.Flag.C, (val & 0xFF00) > 0);
         cpu.setFlag(Cpu.Flag.Z, (val & 0xff) == 0);
         cpu.setFlag(Cpu.Flag.N, (val & 0x80) > 0); //If the high bit is activated
         mode = Mode;
         cycle = Cycle;
-        //Hold in accumulator if mode is on
-        if(mode == Cpu.Mode.ACCUMULATOR)
-            cpu.A = val & 0xff;
-        else
-            cpu.write(cpu.addrAbs, val & 0xff);
+        cpu.write(cpu.addrAbs, val & 0xff);
         return 1; // Might take additional clock cycle
     }
-    int AND(Mode Mode, int Cycle){
-        cpu.fetch();
-        cpu.A = cpu.fetched & 0xff;
-        cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0); //Check if highbit is activated
-        cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
-        mode = Mode;
-        cycle = Cycle;
-        return 1;
-    }
+    //
     int BCC(Mode Mode, int Cycle){
         //Branch only if carry is clear
         cpu.branch(Cpu.Flag.C, true);
@@ -324,6 +324,7 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int BCS(Mode Mode, int Cycle){
         //Branch if carry is set
         cpu.branch(Cpu.Flag.C, false);
@@ -331,14 +332,17 @@ public class Instruction {
         cycle = Cycle;
         return 0;
     }
+    //
     int BEQ(Mode Mode, int Cycle){
         cpu.branch(Cpu.Flag.Z, false);
         mode = Mode;
         cycle = Cycle;
         return 0;
     }
+    //
     int BIT(Mode Mode, int Cycle){
-        cpu.fetch();
+        //Internal check using AND on value and A
+        cpu.load();
         cpu.setFlag(Cpu.Flag.Z, (cpu.A & cpu.fetched) == 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.fetched & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.V, (cpu.fetched & (1 << 6)) > 0); //Check if 6th bit is set
@@ -346,17 +350,14 @@ public class Instruction {
         cycle = Cycle;
         return 0;
     }
+    //
     int BMI(Mode Mode, int Cycle){
-        cpu.fetch();
-        if(cpu.getFlag(Cpu.Flag.N)){
-            cycle++;
-            cpu.addrAbs = cpu.PC + cpu.addrRel;
-            cpu.PC = cpu.addrAbs;
-        }
+        cpu.branch(Cpu.Flag.N, false);
         mode = Mode;
         cycle = Cycle;
         return 0;
     }
+    //
     int BNE(Mode Mode, int Cycle){
         //Branch on not equal
         cpu.branch(Cpu.Flag.Z, true);
@@ -364,63 +365,81 @@ public class Instruction {
         cycle = Cycle;
         return 0;
     }
+    //
     int BPL(Mode Mode, int Cycle){
+        //Branch if N is clear
+        //Opposite of BMI
         cpu.branch(Cpu.Flag.N, true);
         mode = Mode;
         cycle = Cycle;
         return 0;
     }
+    //
     int BRK(Mode Mode, int Cycle){
-        cpu.PC++;
+        //Fprces a software interrupt
+        //Interrupt is always set to true
         cpu.setFlag(Cpu.Flag.I, true);
+        //Push Program Counter and Status Register to stack
+        //Increment Program Counter everytime its read
+        cpu.PC++;
         cpu.pushStack((cpu.PC >> 8) & 0xFF);
         cpu.pushStack(cpu.PC & 0xFF);
+        //B = 1 before pushing status to memory
         cpu.setFlag(Cpu.Flag.B, true);
         cpu.pushStack(cpu.P);
+        //Reset B after writing P to memory
         cpu.setFlag(Cpu.Flag.B, false);
         cpu.PC = cpu.read(0xFFFE) | (cpu.read(0xFFFF) << 8);
         mode = Mode;
         cycle = Cycle;
         return 0;
     }
+    //
     int BVC(Mode Mode, int Cycle){
         cpu.branch(Cpu.Flag.V, true);
         mode = Mode;
         cycle = Cycle;
         return 0;
     }
+    //
     int BVS(Mode Mode, int Cycle){
         cpu.branch(Cpu.Flag.V, false);
         mode = Mode;
         cycle = Cycle;
         return 0;
     }
+    //Clear Flag
     int CLC(Mode Mode, int Cycle){
         mode = Mode;
         cycle = Cycle;
         cpu.setFlag(Cpu.Flag.C, false);
         return 0;
     }
+    //
     int CLD(Mode Mode, int Cycle){
         cpu.setFlag(Cpu.Flag.D, false);
         mode = Mode;
         cycle = Cycle;
         return 0;
     }
+    //
     int CLI(Mode Mode, int Cycle){
         cpu.setFlag(Cpu.Flag.I, false);
         mode = Mode;
         cycle = Cycle;
         return 0;
     }
+    //
     int CLV(Mode Mode, int Cycle){
         cpu.setFlag(Cpu.Flag.V, false);
         mode = Mode;
         cycle = Cycle;
         return 0;
     }
+    //Compares
     int CMP(Mode Mode, int Cycle){
-        cpu.fetch();
+        //Compares value with A and set flags accordingly
+        cpu.load();
         cpu.setFlag(Cpu.Flag.Z, cpu.A == cpu.fetched);
         cpu.setFlag(Cpu.Flag.C, cpu.A >= cpu.fetched);
         cpu.setFlag(Cpu.Flag.N, ((cpu.A - cpu.fetched) & 0x80) > 0);
@@ -428,8 +447,9 @@ public class Instruction {
         cycle = Cycle;
         return 1;
     }
+    //
     int CPX(Mode Mode, int Cycle){
-        cpu.fetch();
+        cpu.load();
         cpu.setFlag(Cpu.Flag.N, ((cpu.X - cpu.fetched) & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.X == cpu.fetched);
         cpu.setFlag(Cpu.Flag.C, cpu.X >= cpu.fetched);
@@ -437,8 +457,9 @@ public class Instruction {
         cycle = Cycle;
         return 0;
     }
+    //
     int CPY(Mode Mode, int Cycle){
-        cpu.fetch();
+        cpu.load();
         cpu.setFlag(Cpu.Flag.N, ((cpu.Y - cpu.fetched) & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.Y == cpu.fetched);
         cpu.setFlag(Cpu.Flag.C, cpu.Y >= cpu.fetched);
@@ -446,13 +467,21 @@ public class Instruction {
         cycle = Cycle;
         return 0;
     }
+    //Decrements
     int DCP(Mode Mode, int Cycle){
+        //Decrement value then CMP
+        cpu.load();
+        cpu.fetched--;
+        cpu.setFlag(Cpu.Flag.N, ((cpu.A - cpu.fetched ) & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
+        cpu.setFlag(Cpu.Flag.C, cpu.A >= cpu.fetched);
         mode = Mode;
         cycle = Cycle;
         return 0;
     }
+    //
     int DEC(Mode Mode, int Cycle){
-        cpu.fetch();
+        cpu.load();
         cpu.fetched--;
         cpu.setFlag(Cpu.Flag.N, (cpu.fetched & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.fetched == 0);
@@ -460,6 +489,7 @@ public class Instruction {
         cycle = Cycle;
         return 0;
     }
+    //
     int DEX(Mode Mode, int Cycle){
         cpu.X--;
         cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
@@ -468,6 +498,7 @@ public class Instruction {
         cycle = Cycle;
         return 0;
     }
+    //
     int DEY(Mode Mode, int Cycle){
         cpu.Y--;
         cpu.setFlag(Cpu.Flag.N, (cpu.Y & 0x80) > 0);
@@ -476,8 +507,10 @@ public class Instruction {
         cycle = Cycle;
         return 0;
     }
+    //
     int EOR(Mode Mode, int Cycle){
-        cpu.fetch();
+        // Does a ^ on A with value
+        cpu.load();
         cpu.A ^= cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
@@ -485,8 +518,10 @@ public class Instruction {
         cycle = Cycle;
         return 1;
     }
+    //Increments
     int INC(Mode Mode, int Cycle){
-        cpu.fetch();
+        //Increment value
+        cpu.load();
         cpu.write(cpu.addrAbs, (cpu.fetched + 1) & 0xff);
         cpu.setFlag(Cpu.Flag.N, (cpu.fetched & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.fetched == 0);
@@ -494,6 +529,7 @@ public class Instruction {
         cycle = Cycle;
         return 0;
     }
+    //
     int INX(Mode Mode, int Cycle){
         cpu.X++;
         cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
@@ -502,6 +538,7 @@ public class Instruction {
         cycle = Cycle;
         return 0;
     }
+    //
     int INY(Mode Mode, int Cycle){
         cpu.Y++;
         cpu.setFlag(Cpu.Flag.N, (cpu.Y & 0x80) > 0);
@@ -510,13 +547,16 @@ public class Instruction {
         cycle = Cycle;
         return 0;
     }
+    //
     int JMP(Mode Mode, int Cycle){
-        cpu.fetch();
+        //Sets PC to value
+        cpu.load();
         cpu.PC = cpu.fetched;
         mode = Mode;
         cycle = Cycle;
         return 0;
     }
+    //
     int JSR(Mode Mode, int Cycle){
         cpu.PC--;
 	    cpu.pushStack((cpu.PC >> 8) & 0xFF);
@@ -526,8 +566,10 @@ public class Instruction {
         cycle = Cycle;
         return 0;
     }
+    //Loads
     int LDA(Mode Mode, int Cycle){
-        cpu.fetch();
+        //Sets A as value
+        cpu.load();
         cpu.A = cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
@@ -535,8 +577,9 @@ public class Instruction {
         cycle = Cycle;
         return 1;
     }
+    //
     int LDX(Mode Mode, int Cycle){
-        cpu.fetch();
+        cpu.load();
         cpu.X = cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.X == 0);
@@ -544,8 +587,9 @@ public class Instruction {
         cycle = Cycle;
         return 1;
     }
+    //
     int LDY(Mode Mode, int Cycle){
-        cpu.fetch();
+        cpu.load();
         cpu.Y = cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.Y & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.Y == 0);
@@ -553,24 +597,30 @@ public class Instruction {
         cycle = Cycle;
         return 1;
     }
+    //
     int LSR(Mode Mode, int Cycle){
-        cpu.fetch();
+        //Shift value by 
+        cpu.load();
         cpu.setFlag(Cpu.Flag.C, (cpu.fetched & 0x01) > 0);
         cpu.fetched >>= 1;
+        //N is always 0
         cpu.setFlag(Cpu.Flag.N, false);
         cpu.setFlag(Cpu.Flag.Z, cpu.fetched == 0);
         mode = Mode;
         cycle = Cycle;
         return 1;
     }
+    //
     int NOP(Mode Mode, int Cycle){
         //Does nothing 
         mode = Mode;
         cycle = Cycle;
         return 1;
     }
+    //
     int ORA(Mode Mode, int Cycle){
-        cpu.fetch();
+        //Performs OR on A with value
+        cpu.load();
         cpu.A |= cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
@@ -578,14 +628,20 @@ public class Instruction {
         cycle = Cycle;
         return 1;
     }
+    //Pushes
     int PHA(Mode Mode, int Cycle){
+        //Push A to stack
         cpu.pushStack(cpu.A);
         return 0;
     }
+    //
     int PHP(Mode Mode, int Cycle){
-        cpu.pushStack(cpu.P | (1 << 4) | (1<<5));
+        cpu.setFlag(Cpu.Flag.B, true);
+        cpu.setFlag(Cpu.Flag.U, true);
+        cpu.pushStack(cpu.P);
         return 0;
     }
+    //Pops
     int PLA(Mode Mode, int Cycle){
         cpu.A = cpu.popStack();
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
@@ -594,6 +650,7 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int PLP(Mode Mode, int Cycle){
         cpu.P = cpu.popStack();
         cpu.setFlag(Cpu.Flag.U, true);
@@ -601,8 +658,10 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int ROL(Mode Mode, int Cycle){
-        cpu.fetch();
+        cpu.load();
+        //00101100 > 01011000 + (1 if c is set)
         int temp = cpu.fetched << 1 | (cpu.getFlag(Cpu.Flag.C) ? 1 : 0);
         cpu.setFlag(Cpu.Flag.C, (temp & 0xFF00) > 0);
         cpu.setFlag(Cpu.Flag.Z, temp == 0);
@@ -615,9 +674,10 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int ROR(Mode Mode, int Cycle){
-        cpu.fetch();
-        int temp = cpu.fetched >> 1 | 0x80;
+        cpu.load();
+        int temp = cpu.fetched >> 1 | (cpu.getFlag(Cpu.Flag.C) ? 0x80 : 0);
         cpu.setFlag(Cpu.Flag.C, (temp & 1) > 0);
         cpu.setFlag(Cpu.Flag.Z, temp == 0);
         cpu.setFlag(Cpu.Flag.N, (temp & 0x80) > 0);
@@ -629,16 +689,19 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int RTI(Mode Mode, int Cycle){
         cpu.P = cpu.popStack();
-        cpu.P &= (1 << 4);
-        cpu.P &= (1<<5);
+        //Unset B and U
+        cpu.setFlag(Cpu.Flag.B, false);
+        cpu.setFlag(Cpu.Flag.U, false);
         cpu.PC = cpu.popStack();
         cpu.PC |= cpu.popStack() << 8;
         cycle = Cycle;
         mode = Mode;
         return 0;
     }
+    //
     int RTS(Mode Mode, int Cycle){
         cpu.PC = cpu.popStack();
         cpu.PC |= cpu.popStack() << 8;
@@ -647,54 +710,65 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int SBC(Mode Mode, int Cycle){
-        cpu.fetch();
+        cpu.load();
         int val = cpu.fetched ^ 0xFF;
         int temp = cpu.A + val + (cpu.getFlag(Cpu.Flag.C) ? 1 : 0);
         cpu.setFlag(Cpu.Flag.C, (temp & 0xFF00) > 0);
         cpu.setFlag(Cpu.Flag.N, (temp * 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, temp == 0);
         cpu.setFlag(Cpu.Flag.V, ((temp ^ cpu.A) & (temp ^ val) & 0x80) > 0);
+        cpu.A = temp & 0xFF;
         cycle = Cycle;
-        return Mode == Cpu.Mode.INDEXED_INDIRECT ? Cycle : 0;
+        return 1;
     }
+    //Set Flags
     int SEC(Mode Mode, int Cycle){
         cpu.setFlag(Cpu.Flag.C, true);
         cycle = Cycle;
         mode = Mode;
         return 0;
     }
+    //
     int SED(Mode Mode, int Cycle){
         cpu.setFlag(Cpu.Flag.D, true);
         cycle = Cycle;
         mode = Mode;
         return 0;
     }
+    //
     int SEI(Mode Mode, int Cycle){
         cpu.setFlag(Cpu.Flag.I, true);
         cycle = Cycle;
         mode = Mode;
         return 0;
     }
+    //Store
     int STA(Mode Mode, int Cycle){
         cpu.write(cpu.addrAbs, cpu.A);
         cycle = Cycle;
         mode = Mode;
         return 0;
     }
+    //
     int STX(Mode Mode, int Cycle){
+        //Writes X to addr
         cpu.write(cpu.addrAbs, cpu.X);
         cycle = Cycle;
         mode = Mode;
         return 0;
     }
+    //
     int STY(Mode Mode, int Cycle){
         cpu.write(cpu.addrAbs, cpu.Y);
         cycle = Cycle;
         mode = Mode;
         return 0;
     }
+    //Transfers
     int TAX(Mode Mode, int Cycle){
+        //Moves A to X
         cpu.X = cpu.A;
         cpu.setFlag(Cpu.Flag.Z, cpu.X == 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
@@ -702,6 +776,7 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int TAY(Mode Mode, int Cycle){
         cpu.Y = cpu.A;
         cpu.setFlag(Cpu.Flag.Z, cpu.Y == 0);
@@ -710,6 +785,7 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int TSX(Mode Mode, int Cycle){
         cpu.X = cpu.S;
         cpu.setFlag(Cpu.Flag.Z, cpu.X == 0);
@@ -718,6 +794,7 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int TXA(Mode Mode, int Cycle){
         cpu.A = cpu.X;
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
@@ -726,6 +803,7 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int TXS(Mode Mode, int Cycle){
         cpu.S = cpu.X;
         cpu.setFlag(Cpu.Flag.Z, cpu.S == 0);
@@ -734,6 +812,7 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int TYA(Mode Mode, int Cycle){
         cpu.A = cpu.Y;
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
@@ -744,7 +823,7 @@ public class Instruction {
     }
     //Unofficial opcodes
     int ALR(Mode Mode, int Cycle){
-        cpu.fetch();
+        cpu.load();
         int sum = cpu.A & cpu.fetched;
         cpu.setFlag(Cpu.Flag.C, (sum & 1) > 0);
         cpu.setFlag(Cpu.Flag.Z, sum == 0);
@@ -754,19 +833,19 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int ANC(Mode Mode, int Cycle){
-        cpu.fetch();
-        int sum = cpu.A & cpu.fetched;
-        cpu.setFlag(Cpu.Flag.C, (sum & 0xFF00) > 0);
-        cpu.setFlag(Cpu.Flag.Z, sum == 0);
-        cpu.setFlag(Cpu.Flag.N, (sum & 0x80) > 0);
-        cpu.A = sum;
+        cpu.load();
+        cpu.A &= cpu.fetched;
+        cpu.setFlag(Cpu.Flag.C, (cpu.A & 0xFF00) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
+        cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cycle = Cycle;
         mode = Mode;
         return 0;
     }
     int ARR(Mode Mode, int Cycle){
-        cpu.fetch();
+        cpu.load();
         int sum = cpu.A & cpu.fetched;
         sum >>= 1;
         //if(cpu.getFlag(Cpu.Flag.C))
@@ -780,13 +859,22 @@ public class Instruction {
         return 0;
     }
     int AXS(Mode Mode, int Cycle){
-        cpu.write(cpu.X & cpu.A);
+        //sets X to (A AND X)
+        cpu.load();
+        int sum = (cpu.X & cpu.A) - cpu.fetched;
+        cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.X == 0);
+        cpu.setFlag(Cpu.Flag.V, ((cpu.X & sum) & 0x80) > 0 && ((cpu.X ^ cpu.fetched) & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.C, (cpu.X & 0xFF00) > 0);
+        cpu.X = sum;
         cycle = Cycle;
         mode = Mode;
         return 0;
     }
+    //
     int LAX(Mode Mode, int Cycle){
-        cpu.fetch();
+        //Loads A and X
+        cpu.load();
         cpu.A = cpu.fetched;
         cpu.X = cpu.fetched;
         cpu.setFlag(Cpu.Flag.C, (cpu.A & 0xFF00) > 0);
@@ -795,7 +883,9 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int SAX(Mode Mode, int Cycle){
+        //Swaps A and X
         int temp = cpu.A;
         cpu.A = cpu.X;
         cpu.X = temp;
@@ -803,28 +893,71 @@ public class Instruction {
         mode = Mode;
         return 0;
     }
+    //
     int ISC(Mode Mode, int Cycle){
+        cpu.load();
+        cpu.fetched++;
+        int sum = cpu.fetched & 0xFF; //Make sure no overflow
+        cpu.write(cpu.addrAbs, sum);
+        sum -= cpu.A - (cpu.getFlag(Cpu.Flag.C) ? 1 : 0);
+        cpu.setFlag(Cpu.Flag.C, sum <= cpu.A );
+        cpu.setFlag(Cpu.Flag.N, (sum & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, sum == 0);
+        cpu.setFlag(Cpu.Flag.V, ((sum ^ cpu.A) & 0x80) > 0 && ((cpu.A ^ cpu.fetched) & 0x80) > 0);
+        cpu.A = sum & 0xFF;
         cycle = Cycle;
         mode = Mode;
-        return 0;
+        return 1;
     }
+    //
     int RLA(Mode Mode, int Cycle){
+        //Rotate Left then AND
+        cpu.load();
+        int sum = ((cpu.fetched << 1) & 0xFF) + (cpu.getFlag(Cpu.Flag.C) ? 1 : 0);
+        cpu.setFlag(Cpu.Flag.C, (cpu.fetched & 0xFF00) > 0);
+        cpu.write(cpu.addrAbs, sum);
+        cpu.A &= sum;
+        cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
+        cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cycle = Cycle;
         mode = Mode;
         return 0;
     }
+    //
     int RRA(Mode Mode, int Cycle){
+        //Rotate Right then AND
+        //1st part
+        cpu.load();
+        int sum = (cpu.fetched >> 1) + (cpu.getFlag(Cpu.Flag.C) ? 0x80 : 0);
+        cpu.write(cpu.addrAbs, sum);
+
+        //2nd part
+        int temp = cpu.A + cpu.fetched + (cpu.getFlag(Cpu.Flag.C) ? 1 : 0);
+        cpu.setFlag(Cpu.Flag.N, (sum & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.C, sum > 0xFF);
+        cpu.setFlag(Cpu.Flag.V, ((cpu.A ^ cpu.fetched) & 0x80) > 0 && ((cpu.A ^ temp) & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, temp == 0);
+
+        cpu.A = temp & 0xFF;
         cycle = Cycle;
         mode = Mode;
-        return 0;
+        return 1;
     }
+    //
     int SLO(Mode Mode, int Cycle){
+        cpu.load();
+        cpu.setFlag(Cpu.Flag.C, (cpu.fetched & 0x80) > 0);
+        cpu.fetched <<= 1;
+        cpu.A |= cpu.fetched;
+        cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
         cycle = Cycle;
         mode = Mode;
         return 0;
     }
+    //
     int SRE(Mode Mode, int Cycle){
-        cpu.fetch();
+        cpu.load();
         cpu.setFlag(Cpu.Flag.C, (cpu.fetched & 1) > 0);
         cpu.fetched >>= 1;
         cpu.A ^= cpu.fetched;

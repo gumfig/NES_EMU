@@ -41,7 +41,7 @@ public class Cpu {
     // S = stkp, P = Status
     public int A, X, Y, S, P, PC;
     public Nes nes;
-    public int opcode, cycles, fetched, addrAbs, addrRel;
+    public int opcode, cycles, addCycle, fetched, addrAbs, addrRel;
     public Interrupt interrupt;
     public int[] ram; // 0x1000
     public Instruction instruction;
@@ -67,7 +67,7 @@ public class Cpu {
         if(cycles == 0){
             opcode = read(PC++);
             setFlag(Flag.U, true);
-            int addCycle = 0;
+            addCycle = 0;
             switch (instruction.mode) {
                 case IMPLIED, ACCUMULATOR -> fetched = A;
                 case IMMEDIATE -> addrAbs = PC++;
@@ -146,7 +146,7 @@ public class Cpu {
         cycles--;
     }
     // Fetch data
-    public void fetch(){
+    public void load(){
         //Check if IMPLIED since this mode does nothing
         if(instruction.mode != Mode.IMPLIED)
             fetched = read(addrAbs);
