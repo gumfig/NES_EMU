@@ -4,14 +4,14 @@ public class Cpu {
         IRQ,NMI,RESET
     }
     public enum Flag{
-        C(1), //Carry             1 << 0
+        C(1), //Carry                1 << 0
         Z(1<<1), //Zero              1 << 1
         I(1<<2), //Interrupt Disable 1 << 2
         D(1<<3), //Decimal Mode      1 << 3
         B(1<<4), //Break             1 << 4
         U(1<<5), //Unused            1 << 5
         V(1<<6), //Overflow          1 << 6
-        N(1<<7); // Negative          1 << 7
+        N(1<<7); // Negative         1 << 7
         private final int bit;
         Flag(int bit){
             this.bit = bit;
@@ -42,17 +42,18 @@ public class Cpu {
     public int A, X, Y, S, P, PC;
     public Nes nes;
     public int opcode, cycles, addCycle, fetched, addrAbs, addrRel;
+    public boolean complete;
     public Interrupt interrupt;
     public int[] ram; // 0x1000
     public Instruction instruction;
     public Cpu(Nes nes){
         this.nes = nes;
+        ram = new int[64 * 1024];
+        instruction = new Instruction(this);
     }
     public void reset(){
         // Tried to be as close to the wiki as possible
-        instruction = new Instruction(this);
-        this.ram = new int[0x10000];
-        P = 0x34; // IRQ disabled
+        P = 0x34; // B, U, I is set
         S = 0xFD;
         A=0;X=0;Y=0;
         //The CPU starts executing at the values it reads from $fffc and $fffd
@@ -60,16 +61,54 @@ public class Cpu {
         int high = read(0xFFFD);
         PC = (high << 8) | low;
         addrAbs = 0;
+        addrRel = 0;
         fetched = 0;
     }
-    void clock(){
+    //Interrupt Request
+    public void irq(){
+        //Only Interrupt if the DisableInterrupt Flag is disabled
+        if(!getFlag(Flag.I)){
+            pushStack((PC >> 8) & 0xFF);
+            pushStack(PC & 0xFF);
+            setFlag(Flag.B, false);
+            setFlag(Flag.U, true);
+            setFlag(Flag.I, true);
+            pushStack(P);
+            //Read new PC from fixed addr
+            addrAbs = 0xFFFE;
+            PC = (read(addrAbs + 1) << 8) | read(addrAbs);
+            cycles = 6;
+        }
+    }
+    //Non-maskable Interrupt
+    public void nmi(){
+        //Interrupts no matter what
+        //Basically the same as IRQ
+        //except we read from 0xFFFA
+        pushStack((PC >> 8) & 0xFF);
+        pushStack(PC & 0xFF);
+        setFlag(Flag.B, false);
+        setFlag(Flag.U, true);
+        setFlag(Flag.I, true);
+        pushStack(P);
+        //Read new PC from fixed addr
+        addrAbs = 0xFFFA;
+        PC = (read(addrAbs + 1) << 8) | read(addrAbs);
+        cycles = 6;
+    }
+    public void clock(){
         // If no instructions are running
-        if(cycles == 0){
+        if(ready()){
             opcode = read(PC++);
             setFlag(Flag.U, true);
             addCycle = 0;
+            cycles += instruction.cycle;
+            instruction.mode = Instruction.lookupMode[opcode];
             switch (instruction.mode) {
-                case IMPLIED, ACCUMULATOR -> fetched = A;
+                case IMPLIED, ACCUMULATOR -> {
+                    fetched = 0;
+                    fetched += A;
+                }
                 case IMMEDIATE -> addrAbs = PC++;
                 case ZERO_PAGE -> {
                     addrAbs = read(PC++);
@@ -137,11 +176,12 @@ public class Cpu {
                 case RELATIVE -> {
                     addrRel = read(PC++);
                     if((addrRel & 0x80) > 0)
-                        addrRel |= 0xFF00;
+                        addrRel ^= ~0xFF;
+
                 }
             }
-            cycles += (addCycle & instruction.process(opcode));
-            cycles += instruction.cycle;
+            cycles += instruction.process(opcode);
+            cycles += addCycle;
         }
         cycles--;
     }
@@ -179,20 +219,30 @@ public class Cpu {
                 cycles++;
             PC = addrAbs;
         }
+
     }
     // Flag functions
      public boolean getFlag(Flag flag){
         // Only true if intterupt disable is off
         return (P & flag.bit) > 0;
     }
+    public boolean ready(){
+        return cycles == 0;
+    }
     public void setFlag(Flag flag, boolean f){
         P = f ? P | flag.bit : P & ~flag.bit;
     }
     @Override
     public String toString() {
-        return "----------INSTRUCTIONS-----------" + '\n' +
-               "Op: 0x" +  Integer.toHexString(instruction.opcode) +  " " + "Mode: " + instruction.mode + " " + "Cycles: " + instruction.cycle + "\n" +
-                "--------------CPU----------------" + '\n' +
-                "A:" + A + " " + "X:" + X + " " + "Y:" + Y + " " + "P:0b" + Integer.toBinaryString(P) + " " + "PC:0x" + Integer.toHexString(PC);
+        return "-CPU: " + '\n' +
+                "A:" + A + " " + "X:" + X + " " + "Y:" + Y + "\n" +
+                "P:" + Integer.toBinaryString(P) + " " + "PC:$" + Integer.toHexString(PC) + "\n"+
+                "S:$" + Integer.toHexString(S) + "\n" +
+                "Addr:$" + Integer.toHexString(addrAbs) + "\n" + "AddrRel: " + addrRel + "\n" +
+                 "-INSTRUCTION: " + '\n' +
+                "Code:"+ instruction.name + "\n" +
+                "Op:$" +  Integer.toHexString(opcode) +  "\n" +
+                "Mode:" + instruction.mode + "\n" +
+                "Cycles:" + instruction.cycle + "\n";
     }
 }

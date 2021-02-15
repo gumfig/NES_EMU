@@ -79,7 +79,7 @@ public class RomLoader {
             data = null;
         }else if (data[0] == 'N' && data[1] == 'E' && data[2] == 'S' && data[3] == 'M' &&data[4] == 0x1A){ // Valid nsf file
             // Don't know if im going to deal with this
-            System.out.println("idk");
+            System.out.println("Not yet implemented");
         }
         else throw new MapperException("Invalid file format!");
     }
@@ -88,7 +88,7 @@ public class RomLoader {
     }
     @Override
     public String toString() {
-        return "--------------ROM----------------" + '\n' +
+        return "-ROM: " + '\n' +
                 "Nes 2.0: " + nes2Format + "\n" +
                 "rSize: " + romSize + " * 16kb" + "\n" +
                 "vSize: " + vromSize + " * 8kb" + "\n" +

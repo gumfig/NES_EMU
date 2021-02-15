@@ -24,7 +24,6 @@ public class Nes {
         ppu = new Ppu(this);
         mapper = rom.mapper;
         mapper.nes = this;
-        cpu.reset();
         // Core component conectivity
     }
 }
