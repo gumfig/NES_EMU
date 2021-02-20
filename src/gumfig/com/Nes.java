@@ -26,4 +26,10 @@ public class Nes {
         mapper.nes = this;
         // Core component conectivity
     }
+    public void clock(){
+
+    }
+    public void reset(){
+        
+    }
 }

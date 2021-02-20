@@ -1,6 +1,4 @@
 package gumfig.com;
-
-import java.lang.reflect.Method;
 import java.io.IOException;
 
 
@@ -9,7 +7,9 @@ public class Main{
         Nes nes = new Nes();
         nes.load("/home/gumfig/Documents/Tetris.nes");
         var frame = new NesFrame(nes, true);
+        frame.setVisible(true);
         System.out.println(log(nes));
+
     }
     public static String log(Nes nes){
         return nes.cpu.toString() + nes.rom.toString();

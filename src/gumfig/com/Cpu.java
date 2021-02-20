@@ -135,7 +135,7 @@ public class Cpu {
                     int high = read(PC++);
                     addrAbs = (high << 8) | low;
                     addrAbs += X;
-                    //Check if overflow occured
+                    //Check if overflow occurred
                     if((addrAbs & 0xFF00) != (high << 8))
                         addCycle += 1; // Add additional clock cycle
                 }

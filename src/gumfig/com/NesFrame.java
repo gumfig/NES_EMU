@@ -15,6 +15,5 @@ public class NesFrame extends JFrame {
             addKeyListener(debugger);
             add(debugger, BorderLayout.EAST);
         }
-        setVisible(true);
     }
 }

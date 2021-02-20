@@ -11,9 +11,10 @@ public class Debug extends JPanel implements KeyListener{
     Nes nes;
     JLabel cpuLabel, romLabel, memLabel;
     boolean isVisible;
+    StringBuilder memMap1;
 
     String getData(String s){
-        return "<html>" + s.replace("\n", "<br>") + "<style='width: 1020px;;'hr><hr></html>";
+        return "<html>" + s.replace("\n", "<br>") + "<style='color=green;'hr><hr></html>";
     }
 
     public Debug(Nes nes){
@@ -24,6 +25,14 @@ public class Debug extends JPanel implements KeyListener{
         setBorder(new EmptyBorder(15,15,15,15));
         setPreferredSize(new Dimension(400, 100));
         setBackground(new Color(40,60,230));
+
+        int[] testCases = {
+                0xA2,
+                0xF0,
+        };
+
+        for(int i = 0; i < testCases.length; i++)
+            nes.cpu.ram[0x8000 + i] = testCases[i];
 
         //Set reset vectors
         nes.cpu.ram[0xFFFC] = 0;
@@ -45,6 +54,7 @@ public class Debug extends JPanel implements KeyListener{
         add(memLabel, BorderLayout.WEST);
         add(romLabel, BorderLayout.PAGE_END);
         setVisible(false);
+        nes.cpu.read(0);
     }
 
     @Override
@@ -54,13 +64,13 @@ public class Debug extends JPanel implements KeyListener{
     @Override
     public void keyPressed(KeyEvent keyEvent) {
         int nOffset = 0x8000;
-        StringBuilder memMap1 = new StringBuilder("$" + Integer.toHexString(nOffset) + "\n");
 
         switch(keyEvent.getKeyCode()) {
             case (KeyEvent.VK_F9):
                 isVisible = !isVisible;
                 setVisible(isVisible);
             case(KeyEvent.VK_SPACE):
+                memMap1 = new StringBuilder("$" + Integer.toHexString(nOffset) + "\n");
                 do {
                     nes.cpu.clock();
                 } while (!nes.cpu.ready());
