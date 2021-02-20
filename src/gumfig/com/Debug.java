@@ -14,7 +14,7 @@ public class Debug extends JPanel implements KeyListener{
     StringBuilder memMap1;
 
     String getData(String s){
-        return "<html>" + s.replace("\n", "<br>") + "<style='color=green;'hr><hr></html>";
+        return "<html>" + s.replace("\n", "<br>") + "<hr></html>";
     }
 
     public Debug(Nes nes){
@@ -27,8 +27,9 @@ public class Debug extends JPanel implements KeyListener{
         setBackground(new Color(40,60,230));
 
         int[] testCases = {
-                0xA2,
-                0xF0,
+                0xA2, 0x0A, 0x8E, 0, 0, 0xA2, 0x3, 0x8E, 0x01, 0, 0xAc, 0, 0,
+                0xA9, 0, 0x18, 0x6D, 0x01, 0, 0x88, 0xD0, 0xFa, 0x8D, 0x02, 0,
+                0xEA, 0xEA, 0xEA,
         };
 
         for(int i = 0; i < testCases.length; i++)
@@ -63,7 +64,7 @@ public class Debug extends JPanel implements KeyListener{
 
     @Override
     public void keyPressed(KeyEvent keyEvent) {
-        int nOffset = 0x8000;
+        int nOffset = 0x00;
 
         switch(keyEvent.getKeyCode()) {
             case (KeyEvent.VK_F9):

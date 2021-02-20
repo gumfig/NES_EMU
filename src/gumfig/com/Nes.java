@@ -11,6 +11,7 @@ public class Nes {
     public Apu apu;
     public Mapper mapper;
     public RomLoader rom;
+    public boolean isLoaded;
 
     Nes(){
         //Nothin for now
@@ -24,12 +25,17 @@ public class Nes {
         ppu = new Ppu(this);
         mapper = rom.mapper;
         mapper.nes = this;
+        isLoaded = true;
         // Core component conectivity
     }
     public void clock(){
 
     }
     public void reset(){
-        
+        if(isLoaded) {
+            cpu.reset();
+            ppu.reset();
+            apu.reset();
+        }
     }
 }

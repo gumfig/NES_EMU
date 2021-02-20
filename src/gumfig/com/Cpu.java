@@ -38,7 +38,7 @@ public class Cpu {
     // Execute
     // Wait, count cycles, complete
     // Instruction(Mode, Size, Cycle);
-    // S = stkp, P = Status
+    // S = Stack Pointer, P = Status
     public int A, X, Y, S, P, PC;
     public Nes nes;
     public int opcode, cycles, addCycle, fetched, addrAbs, addrRel;
@@ -223,7 +223,7 @@ public class Cpu {
     }
     // Flag functions
      public boolean getFlag(Flag flag){
-        // Only true if intterupt disable is off
+        // Only true if interrupt disable is off
         return (P & flag.bit) > 0;
     }
     public boolean ready(){
