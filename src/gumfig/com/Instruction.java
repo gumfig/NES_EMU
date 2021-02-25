@@ -1,18 +1,14 @@
 package gumfig.com;
-
 import gumfig.com.Cpu.Mode;
-
 public class Instruction {
     // Setup
     public int cycle, opcode;
     public String name; //This is for debugging purposes
     public Mode mode;
     public Cpu cpu;
-
     Instruction(Cpu Cpu) {
         this.cpu = Cpu;
     }
-
     //Lets just pretend like this doesnt exist
     public static Mode[] lookupMode = {
             Mode.IMPLIED, Mode.INDEXED_INDIRECT, null, Mode.INDEXED_INDIRECT, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.IMPLIED, Mode.IMMEDIATE, Mode.ACCUMULATOR, Mode.IMMEDIATE, Mode.ABSOLUTE, Mode.ABSOLUTE, Mode.ABSOLUTE, Mode.ABSOLUTE,
@@ -32,35 +28,26 @@ public class Instruction {
             Mode.IMMEDIATE, Mode.INDEXED_INDIRECT, Mode.IMMEDIATE, Mode.INDEXED_INDIRECT, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.IMPLIED, Mode.IMMEDIATE, Mode.IMPLIED, Mode.IMMEDIATE, Mode.ABSOLUTE, Mode.ABSOLUTE, Mode.ABSOLUTE, Mode.ABSOLUTE,
             Mode.RELATIVE, Mode.INDIRECT_INDEXED, null, Mode.INDIRECT_INDEXED, Mode.ZERO_PAGE_X, Mode.ZERO_PAGE_X, Mode.ZERO_PAGE_X, Mode.ZERO_PAGE_X, Mode.IMPLIED, Mode.ABSOLUTE_Y, Mode.IMPLIED, Mode.ABSOLUTE_Y, Mode.ABSOLUTE_X, Mode.ABSOLUTE_X, Mode.ABSOLUTE_X, Mode.ABSOLUTE_X,
     };
-
     public int process(int opcode) {
         this.opcode = opcode;
         return switch (opcode) {
             //ADC
-            case 0x61 -> ADC(Mode.INDEXED_INDIRECT, 6);
-            case 0x65 -> ADC(Mode.ZERO_PAGE, 3);
-            case 0x69 -> ADC(Mode.IMMEDIATE, 2);
-            case 0x6D -> ADC(Mode.ABSOLUTE, 4);
-            case 0x71 -> ADC(Mode.INDIRECT_INDEXED, 5);
-            case 0x75 -> ADC(Mode.ZERO_PAGE_X, 4);
-            case 0x79 -> ADC(Mode.ABSOLUTE_Y, 4);
-
-            case 0x7D -> ADC(Mode.ABSOLUTE_X, 4);
-            //AND 
-            case 0x21 -> AND(Mode.INDEXED_INDIRECT, 6);
-            case 0x25 -> AND(Mode.ZERO_PAGE, 3);
-            case 0x29 -> AND(Mode.IMMEDIATE, 2);
-            case 0x2D -> AND(Mode.ABSOLUTE, 4);
-            case 0x31 -> AND(Mode.INDIRECT_INDEXED, 5);
-            case 0x35 -> AND(Mode.ZERO_PAGE_X, 4);
-            case 0x39 -> AND(Mode.ABSOLUTE_Y, 4);
-            case 0x3D -> AND(Mode.ABSOLUTE_X, 4);
+            case 0x61 -> ADC(6);
+            case 0x65 -> ADC(3);
+            case 0x69 -> ADC(2);
+            case 0x6D, 0x75, 0x79, 0x7D -> ADC(4);
+            case 0x71 -> ADC(5);
+            //AND
+            case 0x21 -> AND(6);
+            case 0x25 -> AND(3);
+            case 0x29 -> AND(2);
+            case 0x2D, 0x35, 0x39, 0x3D -> AND(4);
+            case 0x31 -> AND(5);
             //ASL
-            case 0x06 -> ASL(Mode.ZERO_PAGE, 5);
-            case 0x0A -> ASL(Mode.ACCUMULATOR, 2);
-            case 0x0E -> ASL(Mode.ABSOLUTE, 6);
-            case 0x16 -> ASL(Mode.ZERO_PAGE_X, 6);
-            case 0x1E -> ASL(Mode.ABSOLUTE_X, 7);
+            case 0x06 -> ASL(5);
+            case 0x0A -> ASL(2);
+            case 0x0E, 0x16 -> ASL(6);
+            case 0x1E -> ASL(7);
             //BCC
             case 0x90 -> BCC();
             //BCS
@@ -68,156 +55,130 @@ public class Instruction {
             //BEQ
             case 0xF0 -> BEQ();
             //BIT
-            case 0x24 -> BIT(Mode.ZERO_PAGE, 3);
-            case 0x2C -> BIT(Mode.ABSOLUTE, 4);
+            case 0x24 -> BIT(3);
+            case 0x2C -> BIT(4);
             //BMI
             case 0x30 -> BMI();
             //BNE
             case 0xD0 -> BNE();
-            //BPL
+            //BL
             case 0x10 -> BPL();
-            //BRK
+            //BK
             case 0x00 -> BRK();
-            //BVC
+            //BC
             case 0x50 -> BVC();
-            //BVS
+            //BS
             case 0x70 -> BVS();
-            //CLC
+            //CC
             case 0x18 -> CLC();
-            //CLD
+            //CD
             case 0xD8 -> CLD();
             //CLI
             case 0x58 -> CLI();
             //CLV
             case 0xB8 -> CLV();
             //CMP
-            case 0xC1 -> CMP(Mode.INDEXED_INDIRECT, 6);
-            case 0xC5 -> CMP(Mode.ZERO_PAGE, 3);
-            case 0xC9 -> CMP(Mode.IMMEDIATE, 2);
-            case 0xCD -> CMP(Mode.ABSOLUTE, 4);
-            case 0xD1 -> CMP(Mode.INDIRECT_INDEXED, 5);
-            case 0xD5 -> CMP(Mode.ZERO_PAGE_X, 4);
-            case 0xD9 -> CMP(Mode.ABSOLUTE_Y, 4);
-            case 0xDD -> CMP(Mode.ABSOLUTE_X, 4);
+            case 0xC1 -> CMP(6);
+            case 0xC5 -> CMP(3);
+            case 0xC9 -> CMP(2);
+            case 0xCD, 0xD5, 0xD9, 0xDD -> CMP(4);
+            case 0xD1 -> CMP(5);
             //CPX
-            case 0xE0 -> CPX(Mode.IMMEDIATE, 2);
-            case 0xE4 -> CPX(Mode.ZERO_PAGE, 3);
-            case 0xEC -> CPX(Mode.ABSOLUTE, 4);
+            case 0xE0 -> CPX(2);
+            case 0xE4 -> CPX(3);
+            case 0xEC -> CPX(4);
             //CPY
-            case 0xC0 -> CPY(Mode.IMMEDIATE, 2);
-            case 0xC4 -> CPY(Mode.ZERO_PAGE, 3);
-            case 0xCC -> CPY(Mode.ABSOLUTE, 4);
+            case 0xC0 -> CPY(2);
+            case 0xC4 -> CPY(3);
+            case 0xCC -> CPY(4);
             //DCP
-            case 0xC3 -> DCP(Mode.INDEXED_INDIRECT, 8);
-            case 0xC7 -> DCP(Mode.ZERO_PAGE, 5);
-            case 0xCF -> DCP(Mode.ABSOLUTE, 6);
-            case 0xD3 -> DCP(Mode.INDIRECT_INDEXED, 8);
-            case 0xD7 -> DCP(Mode.ZERO_PAGE_X, 6);
-            case 0xDB -> DCP(Mode.ABSOLUTE_Y, 7);
-            case 0xDF -> DCP(Mode.ABSOLUTE_X, 7);
+            case 0xC3 -> DCP(8);
+            case 0xC7 -> DCP(5);
+            case 0xCF, 0xD7 -> DCP(6);
+            case 0xD3 -> DCP(8);
+            case 0xDB, 0xDF -> DCP(7);
             //DEC
-            case 0xC6 -> DEC(Mode.ZERO_PAGE, 5);
-            case 0xCE -> DEC(Mode.ABSOLUTE, 6);
-            case 0xD6 -> DEC(Mode.ZERO_PAGE_X, 6);
-            case 0xDE -> DEC(Mode.ABSOLUTE_X, 7);
+            case 0xC6 -> DEC(5);
+            case 0xCE, 0xD6 -> DEC(6);
+            case 0xDE -> DEC(7);
             //DEX
             case 0xCA -> DEX();
             //DEY
             case 0x88 -> DEY();
             //EOR
-            case 0x41 -> EOR(Mode.INDEXED_INDIRECT, 6);
-            case 0x45 -> EOR(Mode.ZERO_PAGE, 3);
-            case 0x49 -> EOR(Mode.IMMEDIATE, 2);
-            case 0x4D -> EOR(Mode.ABSOLUTE, 4);
-            case 0x51 -> EOR(Mode.INDIRECT_INDEXED, 6);
-            case 0x55 -> EOR(Mode.ZERO_PAGE_X, 4);
-            case 0x59 -> EOR(Mode.ABSOLUTE_Y, 4);
-            case 0x5D -> EOR(Mode.ABSOLUTE_X, 4);
+            case 0x41 -> EOR(6);
+            case 0x45 -> EOR(3);
+            case 0x49 -> EOR(2);
+            case 0x4D, 0x55, 0x59, 0x5D -> EOR(4);
+            case 0x51 -> EOR(6);
             //INC
-            case 0xE6 -> INC(Mode.ZERO_PAGE, 5);
-            case 0xEE -> INC(Mode.ABSOLUTE, 6);
-            case 0xF6 -> INC(Mode.ZERO_PAGE_X, 6);
-            case 0xFE -> INC(Mode.ABSOLUTE_X, 7);
+            case 0xE6 -> INC(5);
+            case 0xEE, 0xF6 -> INC(6);
+            case 0xFE -> INC(7);
             //INX
             case 0xE8 -> INX();
             //INY
             case 0xC8 -> INY();
             //JMP
-            case 0x4C -> JMP(Mode.ABSOLUTE, 3);
-            case 0x6c -> JMP(Mode.INDIRECT, 5);
+            case 0x4C -> JMP(3);
+            case 0x6c -> JMP(5);
             //JSR
             case 0x20 -> JSR();
             //1DA
-            case 0xA1 -> LDA(Mode.INDEXED_INDIRECT, 6);
-            case 0xA5 -> LDA(Mode.ZERO_PAGE, 3);
-            case 0xA9 -> LDA(Mode.IMMEDIATE, 2);
-            case 0xAD -> LDA(Mode.ABSOLUTE, 4);
-            case 0xB1 -> LDA(Mode.INDIRECT_INDEXED, 5);
-            case 0xB5 -> LDA(Mode.ZERO_PAGE_X, 4);
-            case 0xB9 -> LDA(Mode.ABSOLUTE_Y, 4);
-            case 0xBD -> LDA(Mode.ABSOLUTE_X, 4);
+            case 0xA1 -> LDA(6);
+            case 0xA5 -> LDA(3);
+            case 0xA9 -> LDA(2);
+            case 0xAD, 0xB5, 0xB9, 0xBD -> LDA(4);
+            case 0xB1 -> LDA(5);
             //LDX
-            case 0xA2 -> LDX(Mode.IMMEDIATE, 2);
-            case 0xA6 -> LDX(Mode.ZERO_PAGE, 3);
-            case 0xAE -> LDX(Mode.ABSOLUTE, 4);
-            case 0xB6 -> LDX(Mode.ZERO_PAGE_Y, 4);
-            case 0xBE -> LDX(Mode.ABSOLUTE_Y, 4);
+            case 0xA2 -> LDX(2);
+            case 0xA6 -> LDX(3);
+            case 0xAE, 0xB6, 0xBE -> LDX(4);
             //LDY
-            case 0xA0 -> LDY(Mode.IMMEDIATE, 2);
-            case 0xA4 -> LDY(Mode.ZERO_PAGE, 3);
-            case 0xAC -> LDY(Mode.ABSOLUTE, 4);
-            case 0xB4 -> LDY(Mode.ZERO_PAGE_X, 4);
-            case 0xBC -> LDY(Mode.ABSOLUTE_X, 4);
+            case 0xA0 -> LDY(2);
+            case 0xA4 -> LDY(3);
+            case 0xAC, 0xB4, 0xBC -> LDY(4);
             //LSR
-            case 0x46 -> LSR(Mode.ZERO_PAGE, 5);
-            case 0x4a -> LSR(Mode.ACCUMULATOR, 2);
-            case 0x4E -> LSR(Mode.ABSOLUTE, 6);
-            case 0x56 -> LSR(Mode.ZERO_PAGE_X, 6);
-            case 0x5E -> LSR(Mode.ABSOLUTE_X, 7);
+            case 0x46 -> LSR(5);
+            case 0x4a -> LSR(2);
+            case 0x4E, 0x56 -> LSR(6);
+            case 0x5E -> LSR(7);
             //NOP
             case 0x1A, 0x3A, 0x5A, 0x7A, 0xDA, 0xEA, 0xFA -> NOP();
             //ORA
-            case 0x01 -> ORA(Mode.INDEXED_INDIRECT, 6);
-            case 0x05 -> ORA(Mode.ZERO_PAGE, 3);
-            case 0x09 -> ORA(Mode.IMMEDIATE, 2);
-            case 0x0D -> ORA(Mode.ABSOLUTE, 4);
-            case 0x11 -> ORA(Mode.INDIRECT_INDEXED, 5);
-            case 0x15 -> ORA(Mode.ZERO_PAGE_X, 4);
-            case 0x19 -> ORA(Mode.ABSOLUTE_Y, 4);
-            case 0x1D -> ORA(Mode.ABSOLUTE_X, 4);
+            case 0x01 -> ORA(6);
+            case 0x05 -> ORA(3);
+            case 0x09 -> ORA(2);
+            case 0x0D, 0x15, 0x19, 0x1D -> ORA(4);
+            case 0x11 -> ORA(5);
             //PHA
             case 0x48 -> PHA();
             //PHP
             case 0x08 -> PHP();
-            //PLAG
+            //PLA
             case 0x68 -> PLA();
             //PLP
             case 0x28 -> PLP();
             //ROL
-            case 0x26 -> ROL(Mode.ZERO_PAGE, 5);
-            case 0x2A -> ROL(Mode.ACCUMULATOR, 3);
-            case 0x2E -> ROL(Mode.ABSOLUTE, 6);
-            case 0x36 -> ROL(Mode.ZERO_PAGE_X, 6);
-            case 0x3E -> ROL(Mode.ABSOLUTE_X, 7);
+            case 0x26 -> ROL(5);
+            case 0x2A -> ROL(3);
+            case 0x2E, 0x36 -> ROL(6);
+            case 0x3E -> ROL(7);
             // ROR
-            case 0x66 -> ROR(Mode.ZERO_PAGE, 5);
-            case 0x6A -> ROR(Mode.ACCUMULATOR, 2);
-            case 0x6E -> ROR(Mode.ABSOLUTE, 6);
-            case 0x76 -> ROR(Mode.ZERO_PAGE_X, 6);
-            case 0x7E -> ROR(Mode.ABSOLUTE_X, 7);
+            case 0x66 -> ROR(5);
+            case 0x6A -> ROR(2);
+            case 0x6E, 0x76 -> ROR(6);
+            case 0x7E -> ROR(7);
             //RTI
             case 0x40 -> RTI();
             //RTS
             case 0x60 -> RTS();
             //SBC
-            case 0xE9, 0xEB -> SBC(Mode.IMMEDIATE, 2);
-            case 0xE5 -> SBC(Mode.ZERO_PAGE, 3);
-            case 0xF5 -> SBC(Mode.ZERO_PAGE_X, 4);
-            case 0xED -> SBC(Mode.ABSOLUTE, 4);
-            case 0xFD -> SBC(Mode.ABSOLUTE_X, 4);
-            case 0xF9 -> SBC(Mode.ABSOLUTE_Y, 4);
-            case 0xE1 -> SBC(Mode.INDEXED_INDIRECT, 6);
-            case 0xF1 -> SBC(Mode.INDIRECT_INDEXED, 5);
+            case 0xE9, 0xEB -> SBC(2);
+            case 0xE5 -> SBC(3);
+            case 0xF5, 0xED, 0xFD, 0xF9 -> SBC(4);
+            case 0xE1 -> SBC(6);
+            case 0xF1 -> SBC(5);
             //SEC
             case 0x38 -> SEC();
             //SED
@@ -225,21 +186,17 @@ public class Instruction {
             //SEI
             case 0x78 -> SEI();
             //STA
-            case 0x81 -> STA(Mode.INDEXED_INDIRECT, 6);
-            case 0x85 -> STA(Mode.ZERO_PAGE, 3);
-            case 0x8D -> STA(Mode.ABSOLUTE, 4);
-            case 0x91 -> STA(Mode.INDIRECT_INDEXED, 6);
-            case 0x95 -> STA(Mode.ZERO_PAGE_X, 4);
-            case 0x99 -> STA(Mode.ABSOLUTE_Y, 5);
-            case 0x9D -> STA(Mode.ABSOLUTE_X, 5);
+            case 0x81 -> STA(6);
+            case 0x85 -> STA(3);
+            case 0x8D, 0x95 -> STA(4);
+            case 0x91 -> STA(6);
+            case 0x99, 0x9D -> STA(5);
             //STX
-            case 0x86 -> STX(Mode.ZERO_PAGE, 3);
-            case 0x8E -> STX(Mode.ABSOLUTE, 4);
-            case 0x96 -> STX(Mode.ZERO_PAGE_Y, 4);
+            case 0x86 -> STX(3);
+            case 0x8E, 0x96 -> STX(4);
             //STY
-            case 0x84 -> STY(Mode.ZERO_PAGE, 3);
-            case 0x8C -> STY(Mode.ABSOLUTE, 4);
-            case 0x94 -> STY(Mode.ZERO_PAGE_X, 4);
+            case 0x84 -> STY(3);
+            case 0x8C, 0x94 -> STY(4);
             //TAX
             case 0xAA -> TAX();
             case 0xA8 -> TAY();
@@ -252,63 +209,42 @@ public class Instruction {
             case 0x0B, 0x2B -> ANC();
             case 0x6B -> ARR();
             case 0xCB -> AXS();
-            case 0xA3 -> LAX(Mode.INDEXED_INDIRECT, 6);
-            case 0xA7 -> LAX(Mode.ZERO_PAGE, 3);
-            case 0xAB -> LAX(Mode.IMMEDIATE, 2);
-            case 0xAF -> LAX(Mode.ABSOLUTE, 4);
-            case 0xB3 -> LAX(Mode.INDIRECT_INDEXED, 5);
-            case 0xB7 -> LAX(Mode.ZERO_PAGE_Y, 4);
-            case 0xBF -> LAX(Mode.ABSOLUTE_Y, 4);
-            case 0x83 -> SAX(Mode.INDEXED_INDIRECT, 6);
-            case 0x87 -> SAX(Mode.ZERO_PAGE, 3);
-            case 0x8F -> SAX(Mode.ABSOLUTE, 4);
-            case 0x97 -> SAX(Mode.ZERO_PAGE_Y, 4);
-            case 0xE3 -> ISC(Mode.INDEXED_INDIRECT, 8);
-            case 0xE7 -> ISC(Mode.ZERO_PAGE, 5);
-            case 0xEF -> ISC(Mode.ABSOLUTE, 6);
-            case 0xF3 -> ISC(Mode.INDIRECT_INDEXED, 8);
-            case 0xF7 -> ISC(Mode.ZERO_PAGE_X, 6);
-            case 0xFB -> ISC(Mode.ABSOLUTE_Y, 7);
-            case 0xFF -> ISC(Mode.ABSOLUTE_X, 7);
-            case 0x23 -> RLA(Mode.INDEXED_INDIRECT, 8);
-            case 0x27 -> RLA(Mode.ZERO_PAGE, 5);
-            case 0x2F -> RLA(Mode.ABSOLUTE, 6);
-            case 0x33 -> RLA(Mode.INDIRECT_INDEXED, 8);
-            case 0x37 -> RLA(Mode.ZERO_PAGE_X, 6);
-            case 0x3B -> RLA(Mode.ABSOLUTE_Y, 7);
-            case 0x3F -> RLA(Mode.ABSOLUTE_X, 7);
-            case 0x63 -> RRA(Mode.INDEXED_INDIRECT, 8);
-            case 0x67 -> RRA(Mode.ZERO_PAGE, 5);
-            case 0x6F -> RRA(Mode.ABSOLUTE, 6);
-            case 0x73 -> RRA(Mode.INDIRECT_INDEXED, 8);
-            case 0x77 -> RRA(Mode.ZERO_PAGE_X, 6);
-            case 0x7B -> RRA(Mode.ABSOLUTE_Y, 7);
-            case 0x7F -> RRA(Mode.ABSOLUTE_X, 7);
-            case 0x03 -> SLO(Mode.INDEXED_INDIRECT, 8);
-            case 0x07 -> SLO(Mode.ZERO_PAGE, 5);
-            case 0x0F -> SLO(Mode.ABSOLUTE, 6);
-            case 0x13 -> SLO(Mode.INDIRECT_INDEXED, 8);
-            case 0x17 -> SLO(Mode.ZERO_PAGE_X, 6);
-            case 0x1B -> SLO(Mode.ABSOLUTE_Y, 7);
-            case 0x1F -> SLO(Mode.ABSOLUTE_X, 7);
-            case 0x43 -> SRE(Mode.INDEXED_INDIRECT, 8);
-            case 0x47 -> SRE(Mode.ZERO_PAGE, 5);
-            case 0x4F -> SRE(Mode.ABSOLUTE, 6);
-            case 0x53 -> SRE(Mode.INDIRECT_INDEXED, 8);
-            case 0x57 -> SRE(Mode.ZERO_PAGE_X, 6);
-            case 0x5B -> SRE(Mode.ABSOLUTE_Y, 7);
-            case 0x5F -> SRE(Mode.ABSOLUTE_X, 7);
-            case 0x80, 0x82, 0x89, 0xC2, 0xE2 -> SKW(Mode.IMMEDIATE, 2);
-            case 0x0C -> SKW(Mode.ABSOLUTE, 4);
-            case 0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC -> SKW(Mode.ABSOLUTE_X, 4);
-            case 0x04, 0x44, 0x64 -> SKW(Mode.ZERO_PAGE, 3);
-            case 0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4 -> SKW(Mode.ZERO_PAGE_X, 4);
+            case 0xA3 -> LAX(6);
+            case 0xA7 -> LAX(3);
+            case 0xAB -> LAX(2);
+            case 0xAF, 0xB7, 0xBF -> LAX(4);
+            case 0xB3 -> LAX(5);
+            case 0x83 -> SAX(6);
+            case 0x87 -> SAX(3);
+            case 0x8F, 0x97 -> SAX(4);
+            case 0xE3, 0xF3 -> ISC(8);
+            case 0xE7 -> ISC(5);
+            case 0xEF, 0xF7 -> ISC(6);
+            case 0xFB, 0xFF -> ISC(7);
+            case 0x23, 0x33 -> RLA(8);
+            case 0x27 -> RLA(5);
+            case 0x2F, 0x37 -> RLA(6);
+            case 0x3B, 0x3F -> RLA(7);
+            case 0x63, 0x73 -> RRA(8);
+            case 0x67 -> RRA(5);
+            case 0x6F, 0x77 -> RRA(6);
+            case 0x7B, 0x7F -> RRA(7);
+            case 0x03, 0x13 -> SLO(8);
+            case 0x07 -> SLO(5);
+            case 0x0F, 0x17 -> SLO(6);
+            case 0x1B, 0x1F -> SLO(7);
+            case 0x43, 0x53 -> SRE(8);
+            case 0x47 -> SRE(5);
+            case 0x4F, 0x57 -> SRE(6);
+            case 0x5B, 0x5F -> SRE(7);
+            case 0x80, 0x82, 0x89, 0xC2, 0xE2 -> SKW(2);
+            case 0x0C, 0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC, 0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4 -> SKW(4);
+            case 0x04, 0x44, 0x64 -> SKW(3);
             default -> NOP();
         };
     }
-
     //
-    private int ADC(Mode Mode, int Cycle) {
+    private int ADC(int Cycle) {
         cpu.load();
         //Res = A + c + val
         int sum = cpu.A + (cpu.getFlag(Cpu.Flag.C) ? 1 : 0) + cpu.fetched;
@@ -317,110 +253,90 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.Z, (sum & 0xff) == 0);
         cpu.setFlag(Cpu.Flag.N, (sum & 0x80) > 0); // Set according to the high bit
         cpu.A = sum & 0xff;
-        mode = Mode;
         cycle = Cycle;
         name = "ADC";
         return 1;
     }
-
     //
-    private int AND(Mode Mode, int Cycle) {
+    private int AND(int Cycle) {
         cpu.load();
         cpu.A = cpu.fetched & 0xff;
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0); //Check if highbit is activated
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
-        mode = Mode;
         cycle = Cycle;
-        name="AND";
+        name = "AND";
         return 1;
     }
-
     //
-    private int ASL(Mode Mode, int Cycle) {
+    private int ASL(int Cycle) {
         cpu.load();
         int val = cpu.fetched << 1;
         cpu.setFlag(Cpu.Flag.C, (val & 0xFF00) > 0);
         cpu.setFlag(Cpu.Flag.Z, (val & 0xff) == 0);
         cpu.setFlag(Cpu.Flag.N, (val & 0x80) > 0); //If the high bit is activated
         cpu.write(cpu.addrAbs, val & 0xff);
-        mode = Mode;
         cycle = Cycle;
-        name="ASL";
+        name = "ASL";
         return 1; // Might take additional clock cycle
     }
-
     //
     private int BCC() {
         //Branch only if carry is clear
         cpu.branch(Cpu.Flag.C, true);
         cycle = 2;
-        mode = Cpu.Mode.RELATIVE;
-        name="BCC";
+        name = "BCC";
         return 0;
     }
-
     //
     private int BCS() {
         //Branch if carry is set
         cpu.branch(Cpu.Flag.C, false);
-        mode = Cpu.Mode.RELATIVE;
         cycle = 2;
-        name="BCS";
+        name = "BCS";
         return 0;
     }
-
     //
     private int BEQ() {
         cpu.branch(Cpu.Flag.Z, false);
-        mode = Cpu.Mode.RELATIVE;
         cycle = 2;
-        name="BEQ";
+        name = "BEQ";
         return 0;
     }
-
     //
-    private int BIT(Mode Mode, int Cycle) {
+    private int BIT(int Cycle) {
         //Internal check using AND on value and A
         cpu.load();
         cpu.setFlag(Cpu.Flag.Z, (cpu.A & cpu.fetched) == 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.fetched & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.V, (cpu.fetched & (1 << 6)) > 0); //Check if 6th bit is set
-        mode = Mode;
         cycle = Cycle;
-        name="BIT";
+        name = "BIT";
         return 0;
     }
-
     //
     private int BMI() {
         cpu.branch(Cpu.Flag.N, false);
-        mode = Cpu.Mode.RELATIVE;
         cycle = 2;
-        name="BMI";
+        name = "BMI";
         return 0;
     }
-
     //
     private int BNE() {
         //Branch on not equal
         cpu.branch(Cpu.Flag.Z, true);
-        mode = Cpu.Mode.RELATIVE;
         cycle = 2;
-        name="BNE";
+        name = "BNE";
         return 0;
     }
-
     //
-     private int BPL() {
+    private int BPL() {
         //Branch if N is clear
         //Opposite of BMI
         cpu.branch(Cpu.Flag.N, true);
-        mode = Cpu.Mode.RELATIVE;
         cycle = 2;
-         name="BPL";
+        name = "BPL";
         return 0;
     }
-
     //
     private int BRK() {
         //Fprces a software interrupt
@@ -437,261 +353,215 @@ public class Instruction {
         //Reset B after writing P to memory
         cpu.setFlag(Cpu.Flag.B, false);
         cpu.PC = cpu.read(0xFFFE) | (cpu.read(0xFFFF) << 8);
-        mode = Cpu.Mode.IMPLIED;
         cycle = 7;
-        name="BRK";
+        name = "BRK";
         return 0;
     }
-
     //
     private int BVC() {
         cpu.branch(Cpu.Flag.V, true);
-        mode = Cpu.Mode.RELATIVE;
         cycle = 2;
-        name="BVC";
+        name = "BVC";
         return 0;
     }
-
     //
     private int BVS() {
         cpu.branch(Cpu.Flag.V, false);
-        mode = Cpu.Mode.RELATIVE;
         cycle = 2;
-        name="BVS";
+        name = "BVS";
         return 0;
     }
-
     //Clear Flag
     private int CLC() {
-        mode = Cpu.Mode.IMPLIED;
         cycle = 2;
         cpu.setFlag(Cpu.Flag.C, false);
-        name="CLC";
+        name = "CLC";
         return 0;
     }
-
     //
     private int CLD() {
         cpu.setFlag(Cpu.Flag.D, false);
-        mode = Cpu.Mode.IMPLIED;
         cycle = 2;
-        name="CLD";
+        name = "CLD";
         return 0;
     }
-
     //
     private int CLI() {
         cpu.setFlag(Cpu.Flag.I, false);
-        mode = Cpu.Mode.IMPLIED;
         cycle = 2;
-        name="CLI";
+        name = "CLI";
         return 0;
     }
-
     //
     private int CLV() {
         cpu.setFlag(Cpu.Flag.V, false);
-        mode = Cpu.Mode.IMPLIED;
         cycle = 2;
-        name="CLV";
+        name = "CLV";
         return 0;
     }
-
     //Compares
-    private int CMP(Mode Mode, int Cycle) {
+    private int CMP(int Cycle) {
         //Compares value with A and set flags accordingly
         cpu.load();
         cpu.setFlag(Cpu.Flag.Z, cpu.A == cpu.fetched);
         cpu.setFlag(Cpu.Flag.C, cpu.A >= cpu.fetched);
         cpu.setFlag(Cpu.Flag.N, ((cpu.A - cpu.fetched) & 0x80) > 0);
-        mode = Mode;
         cycle = Cycle;
-        name="CMP";
+        name = "CMP";
         return 1;
     }
-
     //
-    private int CPX(Mode Mode, int Cycle) {
+    private int CPX(int Cycle) {
         cpu.load();
         cpu.setFlag(Cpu.Flag.N, ((cpu.X - cpu.fetched) & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.X == cpu.fetched);
         cpu.setFlag(Cpu.Flag.C, cpu.X >= cpu.fetched);
-        mode = Mode;
         cycle = Cycle;
-        name="CPX";
+        name = "CPX";
         return 0;
     }
-
     //
-    private int CPY(Mode Mode, int Cycle) {
+    private int CPY(int Cycle) {
         cpu.load();
         cpu.setFlag(Cpu.Flag.N, ((cpu.Y - cpu.fetched) & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.Y == cpu.fetched);
         cpu.setFlag(Cpu.Flag.C, cpu.Y >= cpu.fetched);
-        mode = Mode;
         cycle = Cycle;
-        name="CPY";
+        name = "CPY";
         return 0;
     }
-
     //Decrements
-    private int DCP(Mode Mode, int Cycle) {
+    private int DCP(int Cycle) {
         //Decrement value then CMP
         cpu.load();
         cpu.fetched--;
         cpu.setFlag(Cpu.Flag.N, ((cpu.A - cpu.fetched) & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
         cpu.setFlag(Cpu.Flag.C, cpu.A >= cpu.fetched);
-        mode = Mode;
         cycle = Cycle;
-        name="DCP";
+        name = "DCP";
         return 0;
     }
-
     //
-    private int DEC(Mode Mode, int Cycle) {
+    private int DEC(int Cycle) {
         cpu.load();
         cpu.fetched--;
         cpu.setFlag(Cpu.Flag.N, (cpu.fetched & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.fetched == 0);
-        mode = Mode;
         cycle = Cycle;
-        name="DEC";
+        name = "DEC";
         return 0;
     }
-
     //
     private int DEX() {
         cpu.X--;
         cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.X == 0);
-        mode = Cpu.Mode.IMPLIED;
         cycle = 2;
-        name="DEX";
+        name = "DEX";
         return 0;
     }
-
     //
     private int DEY() {
         cpu.Y--;
         cpu.setFlag(Cpu.Flag.N, (cpu.Y & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.Y == 0);
-        mode = Cpu.Mode.IMPLIED;
         cycle = 2;
-        name="DEY";
+        name = "DEY";
         return 0;
     }
-
     //
-    private int EOR(Mode Mode, int Cycle) {
+    private int EOR(int Cycle) {
         // Does a ^ on A with value
         cpu.load();
         cpu.A ^= cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
-        mode = Mode;
         cycle = Cycle;
-        name="EOR";
+        name = "EOR";
         return 1;
     }
-
     //Increments
-    private int INC(Mode Mode, int Cycle) {
+    private int INC(int Cycle) {
         //Increment value
         cpu.load();
         cpu.write(cpu.addrAbs, (cpu.fetched + 1) & 0xff);
         cpu.setFlag(Cpu.Flag.N, (cpu.fetched & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.fetched == 0);
-        mode = Mode;
         cycle = Cycle;
-        name="INC";
+        name = "INC";
         return 0;
     }
-
     //
     private int INX() {
         cpu.X++;
         cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.X == 0);
-        mode = Cpu.Mode.IMPLIED;
         cycle = 2;
-        name="INX";
+        name = "INX";
         return 0;
     }
-
     //
     private int INY() {
         cpu.Y++;
         cpu.setFlag(Cpu.Flag.N, (cpu.Y & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.Y == 0);
-        mode = Cpu.Mode.IMPLIED;
         cycle = 2;
-        name="INY";
+        name = "INY";
         return 0;
     }
-
     //
-    private int JMP(Mode Mode, int Cycle) {
+    private int JMP(int Cycle) {
         //Sets PC to value
         cpu.load();
         cpu.PC = cpu.fetched;
-        mode = Mode;
         cycle = Cycle;
-        name="JMP";
+        name = "JMP";
         return 0;
     }
-
     //
     private int JSR() {
         cpu.PC--;
         cpu.pushStack((cpu.PC >> 8) & 0xFF);
         cpu.pushStack(cpu.PC & 0xFF);
         cpu.PC = cpu.addrAbs;
-        mode = Cpu.Mode.ABSOLUTE;
         cycle = 6;
-        name="JSR";
+        name = "JSR";
         return 0;
     }
-
     //Loads
-    private int LDA(Mode Mode, int Cycle) {
+    private int LDA(int Cycle) {
         //Sets A as value
         cpu.load();
         cpu.A = cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
-        mode = Mode;
         cycle = Cycle;
-        name="LDA";
+        name = "LDA";
         return 1;
     }
-
     //
-    private int LDX(Mode Mode, int Cycle) {
+    private int LDX(int Cycle) {
         cpu.load();
         cpu.X = cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.X == 0);
-        mode = Mode;
         cycle = Cycle;
-        name="LDX";
+        name = "LDX";
         return 1;
     }
-
     //
-    private int LDY(Mode Mode, int Cycle) {
+    private int LDY(int Cycle) {
         cpu.load();
         cpu.Y = cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.Y & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.Y == 0);
-        mode = Mode;
         cycle = Cycle;
-        name="LDY";
+        name = "LDY";
         return 1;
     }
-
     //
-    private int LSR(Mode Mode, int Cycle) {
+    private int LSR(int Cycle) {
         //Shift value by 
         cpu.load();
         cpu.setFlag(Cpu.Flag.C, (cpu.fetched & 0x01) > 0);
@@ -699,111 +569,93 @@ public class Instruction {
         //N is always 0
         cpu.setFlag(Cpu.Flag.N, false);
         cpu.setFlag(Cpu.Flag.Z, cpu.fetched == 0);
-        mode = Mode;
         cycle = Cycle;
-        name="LSR";
+        name = "LSR";
         return 1;
     }
-
     //
     private int NOP() {
         //Does nothing 
-        mode = Cpu.Mode.IMPLIED;
         cycle = 2;
-        name="NOP";
+        name = "NOP";
         return 1;
     }
-
     //
-    private int ORA(Mode Mode, int Cycle) {
+    private int ORA(int Cycle) {
         //Performs OR on A with value
         cpu.load();
         cpu.A |= cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
-        mode = Mode;
         cycle = Cycle;
-        name="ORA";
+        name = "ORA";
         return 1;
     }
-
     //Pushes
     private int PHA() {
         //Push A to stack
         cpu.pushStack(cpu.A);
-        mode = Cpu.Mode.IMPLIED;
         cycle = 3;
-        name="PHA";
+        name = "PHA";
         return 0;
     }
-
     //
     private int PHP() {
         cpu.setFlag(Cpu.Flag.B, true);
         cpu.setFlag(Cpu.Flag.U, true);
         cpu.pushStack(cpu.P);
-        mode = Cpu.Mode.IMPLIED;
         cycle = 3;
-        name="PHP";
+        name = "PHP";
         return 0;
     }
-
     //Pops
     private int PLA() {
         cpu.A = cpu.popStack();
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cycle = 4;
-        mode = Cpu.Mode.IMPLIED;
-        name="PLA";
+        name = "PLA";
         return 0;
     }
-
     //
     private int PLP() {
         cpu.P = cpu.popStack();
         cpu.setFlag(Cpu.Flag.U, true);
         cycle = 4;
-        mode = Cpu.Mode.IMPLIED;
-        name="PLP";
+        name = "PLP";
         return 0;
     }
-
     //
-    private int ROL(Mode Mode, int Cycle) {
+    private int ROL(int Cycle) {
         cpu.load();
         //00101100 > 01011000 + (1 if c is set)
         int temp = cpu.fetched << 1 | (cpu.getFlag(Cpu.Flag.C) ? 1 : 0);
         cpu.setFlag(Cpu.Flag.C, (temp & 0xFF00) > 0);
         cpu.setFlag(Cpu.Flag.Z, temp == 0);
         cpu.setFlag(Cpu.Flag.N, (temp & 0x80) > 0);
-        if (mode == Cpu.Mode.IMPLIED)
+        if (lookupMode[opcode] == Cpu.Mode.IMPLIED)
             cpu.A = temp & 0xFF;
         else
             cpu.write(cpu.addrAbs, temp & 0xFF);
         cycle = Cycle;
-        mode = Mode;
-        name="ROL";
+        name = "ROL";
         return 0;
     }
-
     //
-    private int ROR(Mode Mode, int Cycle) {
+    private int ROR(int Cycle) {
         cpu.load();
         int temp = cpu.fetched >> 1 | (cpu.getFlag(Cpu.Flag.C) ? 0x80 : 0);
         cpu.setFlag(Cpu.Flag.C, (temp & 1) > 0);
         cpu.setFlag(Cpu.Flag.Z, temp == 0);
         cpu.setFlag(Cpu.Flag.N, (temp & 0x80) > 0);
-        if (mode == Cpu.Mode.IMPLIED)
+        if (lookupMode[opcode] == Cpu.Mode.IMPLIED)
             cpu.A = temp & 0xFF;
         else
             cpu.write(cpu.addrAbs, temp & 0xFF);
         cycle = Cycle;
-        mode = Mode;
-        name="ROR";
+        name = "ROR";
         return 0;
     }
-
     //
     private int RTI() {
         cpu.P = cpu.popStack();
@@ -813,24 +665,20 @@ public class Instruction {
         cpu.PC = cpu.popStack();
         cpu.PC |= cpu.popStack() << 8;
         cycle = 6;
-        mode = Cpu.Mode.IMPLIED;
-        name="RTI";
+        name = "RTI";
         return 0;
     }
-
     //
     private int RTS() {
         cpu.PC = cpu.popStack();
         cpu.PC |= cpu.popStack() << 8;
         cpu.PC++;
         cycle = 6;
-        mode = Cpu.Mode.IMPLIED;
-        name="RTS";
+        name = "RTS";
         return 0;
     }
-
     //
-    private int SBC(Mode Mode, int Cycle) {
+    private int SBC(int Cycle) {
         cpu.load();
         int val = cpu.fetched ^ 0xFF;
         int temp = cpu.A + val + (cpu.getFlag(Cpu.Flag.C) ? 1 : 0);
@@ -839,67 +687,53 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.Z, temp == 0);
         cpu.setFlag(Cpu.Flag.V, ((temp ^ cpu.A) & (temp ^ val) & 0x80) > 0);
         cpu.A = temp & 0xFF;
-        mode = Mode;
         cycle = Cycle;
-        name="SBC";
+        name = "SBC";
         return 1;
     }
-
     //Set Flags
     private int SEC() {
         cpu.setFlag(Cpu.Flag.C, true);
         cycle = 2;
-        mode = Cpu.Mode.IMPLIED;
-        name="SEC";
+        name = "SEC";
         return 0;
     }
-
     //
     private int SED() {
         cpu.setFlag(Cpu.Flag.D, true);
         cycle = 2;
-        mode = Cpu.Mode.IMPLIED;
-        name="SED";
+        name = "SED";
         return 0;
     }
-
     //
     private int SEI() {
         cpu.setFlag(Cpu.Flag.I, true);
         cycle = 2;
-        mode = Cpu.Mode.IMPLIED;
-        name="SEI";
+        name = "SEI";
         return 0;
     }
-
     //Store
-    private int STA(Mode Mode, int Cycle) {
+    private int STA(int Cycle) {
         cpu.write(cpu.addrAbs, cpu.A);
         cycle = Cycle;
-        mode = Mode;
-        name="STA";
+        name = "STA";
         return 0;
     }
-
     //
-    private int STX(Mode Mode, int Cycle) {
+    private int STX(int Cycle) {
         //Writes X to addr
         cpu.write(cpu.addrAbs, cpu.X);
         cycle = Cycle;
-        mode = Mode;
-        name="STX";
+        name = "STX";
         return 0;
     }
-
     //
-    private int STY(Mode Mode, int Cycle) {
+    private int STY(int Cycle) {
         cpu.write(cpu.addrAbs, cpu.Y);
         cycle = Cycle;
-        mode = Mode;
-        name="STY";
+        name = "STY";
         return 0;
     }
-
     //Transfers
     private int TAX() {
         //Moves A to X
@@ -907,66 +741,54 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.Z, cpu.X == 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
         cycle = 2;
-        mode = Cpu.Mode.IMPLIED;
-        name="TAX";
+        name = "TAX";
         return 0;
     }
-
     //
     private int TAY() {
         cpu.Y = cpu.A;
         cpu.setFlag(Cpu.Flag.Z, cpu.Y == 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.Y & 0x80) > 0);
         cycle = 2;
-        mode = Cpu.Mode.IMPLIED;
-        name="TAY";
+        name = "TAY";
         return 0;
     }
-
     //
     private int TSX() {
         cpu.X = cpu.S;
         cpu.setFlag(Cpu.Flag.Z, cpu.X == 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
         cycle = 2;
-        mode = Cpu.Mode.IMPLIED;
-        name="TSX";
+        name = "TSX";
         return 0;
     }
-
     //
     private int TXA() {
         cpu.A = cpu.X;
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cycle = 2;
-        mode = Cpu.Mode.IMPLIED;
-        name="TXA";
+        name = "TXA";
         return 0;
     }
-
     //
     private int TXS() {
         cpu.S = cpu.X;
         cpu.setFlag(Cpu.Flag.Z, cpu.S == 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.S & 0x80) > 0);
         cycle = 2;
-        mode = Cpu.Mode.IMPLIED;
-        name="TXS";
+        name = "TXS";
         return 0;
     }
-
     //
     private int TYA() {
         cpu.A = cpu.Y;
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cycle = 2;
-        mode = Cpu.Mode.IMPLIED;
-        name="TYA";
+        name = "TYA";
         return 0;
     }
-
     //Unofficial opcodes
     private int ALR() {
         cpu.load();
@@ -976,11 +798,9 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.N, (sum & 0x80) > 0);
         cpu.A = sum >> 1;
         cycle = 2;
-        mode = Cpu.Mode.IMMEDIATE;
-        name="ALR";
+        name = "ALR";
         return 0;
     }
-
     //
     private int ANC() {
         cpu.load();
@@ -989,11 +809,9 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cycle = 2;
-        mode = Cpu.Mode.IMMEDIATE;
-        name="ANC";
+        name = "ANC";
         return 0;
     }
-
     //
     private int ARR() {
         cpu.load();
@@ -1006,11 +824,9 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.C, (sum & 0xFF00) > 0);
         cpu.A = (cpu.getFlag(Cpu.Flag.C) ? 0x80 : 0) | sum;
         cycle = 2;
-        mode = Cpu.Mode.IMMEDIATE;
-        name="ARR";
+        name = "ARR";
         return 0;
     }
-
     //
     private int AXS() {
         //sets X to (A AND X)
@@ -1023,13 +839,11 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.V, ((cpu.X ^ sum) & 0x80) > 0 && ((cpu.X ^ cpu.fetched) & 0x80) > 0);
         cpu.X = sum;
         cycle = 2;
-        mode = Cpu.Mode.IMMEDIATE;
-        name="AXS";
+        name = "AXS";
         return 0;
     }
-
     //
-    private int LAX(Mode Mode, int Cycle) {
+    private int LAX(int Cycle) {
         //Loads A and X
         cpu.load();
         cpu.A = cpu.fetched;
@@ -1037,25 +851,21 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.C, (cpu.A & 0xFF00) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
         cycle = Cycle;
-        mode = Mode;
-        name="LAX";
+        name = "LAX";
         return 0;
     }
-
     //
-    private int SAX(Mode Mode, int Cycle) {
+    private int SAX(int Cycle) {
         //Swaps A and X
         int temp = cpu.A;
         cpu.A = cpu.X;
         cpu.X = temp;
         cycle = Cycle;
-        mode = Mode;
-        name="SAX";
+        name = "SAX";
         return 0;
     }
-
     //
-    private int ISC(Mode Mode, int Cycle) {
+    private int ISC(int Cycle) {
         cpu.load();
         cpu.fetched++;
         int sum = cpu.fetched & 0xFF; //Make sure no overflow
@@ -1067,13 +877,11 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.V, ((sum ^ cpu.A) & 0x80) > 0 && ((cpu.A ^ cpu.fetched) & 0x80) > 0);
         cpu.A = sum & 0xFF;
         cycle = Cycle;
-        mode = Mode;
-        name="ISC";
+        name = "ISC";
         return 1;
     }
-
     //
-    private int RLA(Mode Mode, int Cycle) {
+    private int RLA(int Cycle) {
         //Rotate Left then AND
         cpu.load();
         int sum = ((cpu.fetched << 1) & 0xFF) + (cpu.getFlag(Cpu.Flag.C) ? 1 : 0);
@@ -1083,35 +891,29 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cycle = Cycle;
-        mode = Mode;
-        name="RLA";
+        name = "RLA";
         return 0;
     }
-
     //
-    private int RRA(Mode Mode, int Cycle) {
+    private int RRA(int Cycle) {
         //Rotate Right then AND
         //1st part
         cpu.load();
         int sum = (cpu.fetched >> 1) + (cpu.getFlag(Cpu.Flag.C) ? 0x80 : 0);
         cpu.write(cpu.addrAbs, sum);
-
         //2nd part
         int temp = cpu.A + cpu.fetched + (cpu.getFlag(Cpu.Flag.C) ? 1 : 0);
         cpu.setFlag(Cpu.Flag.N, (sum & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.C, sum > 0xFF);
         cpu.setFlag(Cpu.Flag.V, ((cpu.A ^ cpu.fetched) & 0x80) > 0 && ((cpu.A ^ temp) & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, temp == 0);
-
         cpu.A = temp & 0xFF;
         cycle = Cycle;
-        mode = Mode;
-        name="RRA";
+        name = "RRA";
         return 1;
     }
-
     //
-    private int SLO(Mode Mode, int Cycle) {
+    private int SLO(int Cycle) {
         cpu.load();
         cpu.setFlag(Cpu.Flag.C, (cpu.fetched & 0x80) > 0);
         cpu.fetched <<= 1;
@@ -1119,13 +921,11 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
         cycle = Cycle;
-        mode = Mode;
-        name="SLO";
+        name = "SLO";
         return 0;
     }
-
     //
-    private int SRE(Mode Mode, int Cycle) {
+    private int SRE(int Cycle) {
         cpu.load();
         cpu.setFlag(Cpu.Flag.C, (cpu.fetched & 1) > 0);
         cpu.fetched >>= 1;
@@ -1133,17 +933,14 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
         cycle = Cycle;
-        mode = Mode;
-        name="SRE";
+        name = "SRE";
         return 0;
     }
-
     //This can act As SKB since its Basically NOP
-    private int SKW(Mode Mode, int Cycle) {
+    private int SKW(int Cycle) {
         cpu.read(cpu.addrAbs);
         cycle = Cycle;
-        mode = Mode;
-        name="SKW";
+        name = "SKW";
         return 1;
     }
 }

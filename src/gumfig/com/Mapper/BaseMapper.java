@@ -16,7 +16,7 @@ public class BaseMapper extends Mapper{
         //0x07FF -> 0x2000 = Mirrors of 0x0000 -> 0x07FF
         if(addr < 0x2000)
             nes.cpu.ram[addr & 0x07FF] = data;
-        else if(addr >= 0x2000 && addr < 0x4000)
+        else if(addr < 0x4000)
             //Memory-mapped registers sit at 0x2000 -> 0x2007
             registerWrite(addr, data);
 
@@ -29,21 +29,26 @@ public class BaseMapper extends Mapper{
         switch(addr & 0x7){
             case 0:
                 //Control
+                //Not readable
                 return nes.cpu.ram[0x2000];
             case 1:
                 //Mask
+                //Not readable
                 return nes.cpu.ram[0x2001];
             case 2:
                 //Status
-                break;
+                return nes.ppu.getStatusRegister();
             case 3:
                 //OAM Address
+                //Not readable
                 break;
             case 4:
                 //OAM Data
+                //Not readable
                 break;
             case 5:
                 //Scroll
+                //Not readable
                 break;
             case 6:
                 //PPU Address
@@ -56,17 +61,23 @@ public class BaseMapper extends Mapper{
 
     }
     public void registerWrite(int addr, int data){
-        switch(addr & 0x7){
+        int tmp = addr & 0x7;
+        nes.cpu.ram[0x2000 | tmp] = data;
+
+        switch(tmp){
             case 0:
                 //Control
+                nes.ppu.updateControlRegister(data);
                 break;
             case 1:
                 //Mask
+                nes.ppu.updateMaskRegister(data);
                 break;
             case 2:
                 //Status
                 break;
             case 3:
+                nes.ppu.setOamAddr(data);
                 //OAM Address
                 break;
             case 4:
@@ -82,5 +93,6 @@ public class BaseMapper extends Mapper{
                 //PPU Data
                 break;
         }
+
     }
 }

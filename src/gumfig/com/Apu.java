@@ -8,4 +8,7 @@ public class Apu {
     public void reset(){
 
     }
+    public void clock(){
+
+    }
 }

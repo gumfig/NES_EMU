@@ -2,18 +2,30 @@ package gumfig.com;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.io.IOException;
 
-public class NesFrame extends JFrame {
+public class NesFrame extends JFrame{
+
     Nes nes;
-    NesFrame(Nes nes, Boolean debugging){
-        setSize(700,900);
+    Graphics screen;
+    Debug debugger;
+
+    NesFrame(Nes nes, Boolean debugging) throws IOException {
+        super("Nes Emulator - by gumfig");
+        setSize(800, 900);
+        screen = new Graphics();
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
-        getContentPane().setBackground(new Color(0));
+        setLayout(null);
+        setResizable(false);
+        getContentPane().setBackground(new Color(0x76583D));
         if(debugging) {
-            Debug debugger = new Debug(nes);
+            setSize(1100, 900);
+            debugger = new Debug(nes);
             addKeyListener(debugger);
-            add(debugger, BorderLayout.EAST);
+            add(debugger);
         }
+        add(screen);
     }
 }

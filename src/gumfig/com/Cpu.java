@@ -42,7 +42,6 @@ public class Cpu {
     public int A, X, Y, S, P, PC;
     public Nes nes;
     public int opcode, cycles, addCycle, fetched, addrAbs, addrRel;
-    public boolean complete;
     public Interrupt interrupt;
     public int[] ram; // 0x1000
     public Instruction instruction;
@@ -177,7 +176,6 @@ public class Cpu {
                     addrRel = read(PC++);
                     if((addrRel & 0x80) > 0)
                         addrRel ^= ~0xFF;
-
                 }
             }
             cycles += instruction.process(opcode);
@@ -219,7 +217,6 @@ public class Cpu {
                 cycles++;
             PC = addrAbs;
         }
-
     }
     // Flag functions
      public boolean getFlag(Flag flag){
@@ -242,7 +239,7 @@ public class Cpu {
                  "-INSTRUCTION: " + '\n' +
                 "Code:"+ instruction.name + "\n" +
                 "Op:$" +  Integer.toHexString(opcode) +  "\n" +
-                "Mode:" + instruction.mode + "\n" +
+                "Mode:" + Instruction.lookupMode[opcode] + "\n" +
                 "Cycles:" + instruction.cycle + "\n";
     }
 }
