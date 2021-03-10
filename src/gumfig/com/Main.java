@@ -16,16 +16,27 @@ public class Main{
     }
 
     public static void startGameLoop() throws InterruptedException {
-             do {
-                frame.screen.Draw(new int[256 * 240]);
+        while (true) {
+            do {
                 nes.clock();
-                if(frame.debugger != null)
-                    frame.debugger.updateConsole();
-
-                Thread.sleep(1000);
-
-            }while(true);
+            } while(!nes.ppu.complete);
+            if (frame.debugger != null)
+                frame.debugger.updateConsole();
+            Thread.sleep(16);
+            frame.screen.Draw(nes.ppu.curFrame);
+            nes.ppu.clearFrame();
+            nes.ppu.complete = false;
         }
+
+        /*
+        while(true){
+            nes.clock();
+            if (frame.debugger != null)
+                frame.debugger.updateConsole();
+            frame.screen.Draw(nes.ppu.curFrame);
+        }
+        */
+    }
 
 
     public static String log(Nes nes){

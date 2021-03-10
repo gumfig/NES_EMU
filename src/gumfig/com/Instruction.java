@@ -10,7 +10,7 @@ public class Instruction {
         this.cpu = Cpu;
     }
     //Lets just pretend like this doesnt exist
-    public static Mode[] lookupMode = {
+    private static final Mode[] lookupMode = {
             Mode.IMPLIED, Mode.INDEXED_INDIRECT, null, Mode.INDEXED_INDIRECT, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.IMPLIED, Mode.IMMEDIATE, Mode.ACCUMULATOR, Mode.IMMEDIATE, Mode.ABSOLUTE, Mode.ABSOLUTE, Mode.ABSOLUTE, Mode.ABSOLUTE,
             Mode.RELATIVE, Mode.INDIRECT_INDEXED, null, Mode.INDIRECT_INDEXED, Mode.ZERO_PAGE_X, Mode.ZERO_PAGE_X, Mode.ZERO_PAGE_X, Mode.ZERO_PAGE_X, Mode.IMPLIED, Mode.ABSOLUTE_Y, Mode.IMPLIED, Mode.ABSOLUTE_Y, Mode.ABSOLUTE_X, Mode.ABSOLUTE_X, Mode.ABSOLUTE_X, Mode.ABSOLUTE_X,
             Mode.ABSOLUTE, Mode.INDEXED_INDIRECT, null, Mode.INDEXED_INDIRECT, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.IMPLIED, Mode.IMMEDIATE, Mode.ACCUMULATOR, Mode.IMMEDIATE, Mode.ABSOLUTE, Mode.ABSOLUTE, Mode.ABSOLUTE, Mode.ABSOLUTE,
@@ -28,6 +28,11 @@ public class Instruction {
             Mode.IMMEDIATE, Mode.INDEXED_INDIRECT, Mode.IMMEDIATE, Mode.INDEXED_INDIRECT, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.ZERO_PAGE, Mode.IMPLIED, Mode.IMMEDIATE, Mode.IMPLIED, Mode.IMMEDIATE, Mode.ABSOLUTE, Mode.ABSOLUTE, Mode.ABSOLUTE, Mode.ABSOLUTE,
             Mode.RELATIVE, Mode.INDIRECT_INDEXED, null, Mode.INDIRECT_INDEXED, Mode.ZERO_PAGE_X, Mode.ZERO_PAGE_X, Mode.ZERO_PAGE_X, Mode.ZERO_PAGE_X, Mode.IMPLIED, Mode.ABSOLUTE_Y, Mode.IMPLIED, Mode.ABSOLUTE_Y, Mode.ABSOLUTE_X, Mode.ABSOLUTE_X, Mode.ABSOLUTE_X, Mode.ABSOLUTE_X,
     };
+    public static Mode getAddrMode(int op){
+        if(Math.abs(op) < 256)
+            return lookupMode[Math.abs(op)];
+        return Mode.IMPLIED;
+    }
     public int process(int opcode) {
         this.opcode = opcode;
         return switch (opcode) {
@@ -240,7 +245,7 @@ public class Instruction {
             case 0x80, 0x82, 0x89, 0xC2, 0xE2 -> SKW(2);
             case 0x0C, 0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC, 0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4 -> SKW(4);
             case 0x04, 0x44, 0x64 -> SKW(3);
-            default -> NOP();
+            default -> BRK();
         };
     }
     //
@@ -513,8 +518,7 @@ public class Instruction {
     //
     private int JMP(int Cycle) {
         //Sets PC to value
-        cpu.load();
-        cpu.PC = cpu.fetched;
+        cpu.PC = cpu.addrAbs;
         cycle = Cycle;
         name = "JMP";
         return 0;
@@ -633,7 +637,7 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.C, (temp & 0xFF00) > 0);
         cpu.setFlag(Cpu.Flag.Z, temp == 0);
         cpu.setFlag(Cpu.Flag.N, (temp & 0x80) > 0);
-        if (lookupMode[opcode] == Cpu.Mode.IMPLIED)
+        if (mode == Cpu.Mode.IMPLIED)
             cpu.A = temp & 0xFF;
         else
             cpu.write(cpu.addrAbs, temp & 0xFF);
@@ -648,7 +652,7 @@ public class Instruction {
         cpu.setFlag(Cpu.Flag.C, (temp & 1) > 0);
         cpu.setFlag(Cpu.Flag.Z, temp == 0);
         cpu.setFlag(Cpu.Flag.N, (temp & 0x80) > 0);
-        if (lookupMode[opcode] == Cpu.Mode.IMPLIED)
+        if (mode == Cpu.Mode.IMPLIED)
             cpu.A = temp & 0xFF;
         else
             cpu.write(cpu.addrAbs, temp & 0xFF);

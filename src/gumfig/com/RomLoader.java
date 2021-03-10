@@ -22,7 +22,7 @@ public class RomLoader {
     public Mapper mapper;
     private int id;
     public enum Mirror {
-        UNLOADED, FOUR_SCREEN, HORIZONTAL, VERTICAL
+        UNLOADED, FOUR_SCREEN, HORIZONTAL, VERTICAL, SINGLE
     }
     RomLoader(File game) throws Exception {
         byte[] data = Files.readAllBytes(game.toPath());
@@ -49,18 +49,16 @@ public class RomLoader {
             int offset = 16 + (trainer ? 512 : 0); // Skip the header and trainer section
             //populate prgRom
             for(int i = 0; i < prgRom.length; i++) {
-                prgRom[i] = data[i + offset];
-                //System.out.println(prgRom[i]);
+                prgRom[i] = data[i + offset] & 0xFF;
+                //System.out.println(Integer.toHexString(prgRom[i]));
             }
             offset += prgRom.length; // Skip PRG_ROM section
             //populate chrRom
             for(int i = 0; i < chrRom.length; i++){
                 if(offset + i >= data.length) break;
-                chrRom[i] = data[i+offset];
+                chrRom[i] = data[i + offset] & 0xFF;
                 //System.out.println(chrRom[i]);
             }
-            //Feed it to the garbage collector
-            data = null;
         }else if (data[0] == 'N' && data[1] == 'E' && data[2] == 'S' && data[3] == 'M' &&data[4] == 0x1A){ // Valid nsf file
             // Don't know if im going to deal with this
             System.out.println("Not yet implemented");
@@ -69,6 +67,20 @@ public class RomLoader {
     }
     public Mirror getMirror(){
         return mirror;
+    }
+
+
+    public int readVROM(int addr){
+        return chrRom[addr];
+    }
+    public void writeVROM(int addr, int data){
+        chrRom[addr] = data;
+    }
+    public int readPRGROM(int addr){
+        return prgRom[addr & ((prgBanks > 1) ? 0x7FFF : 0x3FFF)];
+    }
+    public void writePRG(int addr, int data){
+        prgRom[addr & ((prgBanks > 1) ? 0x7FFF : 0x3FFF)] = data;
     }
     @Override
     public String toString() {

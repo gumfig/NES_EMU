@@ -5,11 +5,12 @@ public class BaseMapper extends Mapper{
         if(addr < 0x2000)
             //Mirrored data
             return nes.cpu.ram[addr & 0x7FF];
-        else if(addr <= 0x4017)
+        else if(addr <= 0x4000)
             //Memory-mapped registers sit at 0x2000 -> 0x2007
             return registerRead(addr);
-        else
-            return nes.cpu.ram[addr];
+        else if(addr >= 0x8000)
+            return readPRGROM(addr);
+        return 0;
     }
     public void write(int addr, int data){
         //0x0000 -> 0x07FF = 2KB internal ram
@@ -21,8 +22,8 @@ public class BaseMapper extends Mapper{
             registerWrite(addr, data);
 
         //Cartridge space: PRG ROM, PRG RAM, and mapper registers
-        else if(addr > 0x4017)
-            nes.cpu.ram[addr] = data;
+        else if(addr >= 0x8000)
+            nes.rom.writePRG(addr, data);
     }
     //PPU registers at 0x2000 -> 0x2007
     public int registerRead(int addr){
@@ -30,11 +31,11 @@ public class BaseMapper extends Mapper{
             case 0:
                 //Control
                 //Not readable
-                return nes.cpu.ram[0x2000];
+                break;
             case 1:
                 //Mask
                 //Not readable
-                return nes.cpu.ram[0x2001];
+                break;
             case 2:
                 //Status
                 return nes.ppu.getStatusRegister();
@@ -55,10 +56,24 @@ public class BaseMapper extends Mapper{
                 break;
             case 7:
                 //PPU Data
-                break;
+                return nes.ppu.getBuffer();
         }
         return 0;
 
+    }
+    public int readVROM(int addr){
+        if(addr >= 0 && addr <= 0x1FFF)
+            return nes.rom.readVROM(addr);
+        return 0;
+    }
+    public void writeVROM(int addr, int data){
+        if(addr >= 0 && addr <= 0x1FFF)
+            nes.rom.writeVROM(addr, data);
+    }
+    public int readPRGROM(int addr){
+        if (addr >= 0x8000 && addr <= 0xFFFF)
+            return nes.rom.readPRGROM(addr);
+        return 0;
     }
     public void registerWrite(int addr, int data){
         int tmp = addr & 0x7;
@@ -67,11 +82,11 @@ public class BaseMapper extends Mapper{
         switch(tmp){
             case 0:
                 //Control
-                nes.ppu.updateControlRegister(data);
+                nes.ppu.control.setRegister(data);
                 break;
             case 1:
                 //Mask
-                nes.ppu.updateMaskRegister(data);
+                nes.ppu.mask.setRegister(data);
                 break;
             case 2:
                 //Status
@@ -85,12 +100,15 @@ public class BaseMapper extends Mapper{
                 break;
             case 5:
                 //Scroll
+                nes.ppu.scrollWrite(data);
                 break;
             case 6:
                 //PPU Address
+                nes.ppu.addressWrite(data);
                 break;
             case 7:
                 //PPU Data
+                nes.ppu.bufferWrite(data);
                 break;
         }
 

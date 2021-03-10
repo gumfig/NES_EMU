@@ -17,5 +17,7 @@ public abstract class  Mapper {
 
     public abstract int read(int addr);
     public abstract void write(int addr, int data);
-
+    public abstract int readVROM(int addr);
+    public abstract void writeVROM(int addr, int data);
+    public abstract int readPRGROM(int addr);
 }

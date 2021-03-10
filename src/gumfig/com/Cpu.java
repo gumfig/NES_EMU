@@ -1,8 +1,6 @@
 package gumfig.com;
+
 public class Cpu {
-    public enum Interrupt{
-        IRQ,NMI,RESET
-    }
     public enum Flag{
         C(1), //Carry                1 << 0
         Z(1<<1), //Zero              1 << 1
@@ -42,7 +40,6 @@ public class Cpu {
     public int A, X, Y, S, P, PC;
     public Nes nes;
     public int opcode, cycles, addCycle, fetched, addrAbs, addrRel;
-    public Interrupt interrupt;
     public int[] ram; // 0x1000
     public Instruction instruction;
     public Cpu(Nes nes){
@@ -59,9 +56,11 @@ public class Cpu {
         int low = read(0xFFFC);
         int high = read(0xFFFD);
         PC = (high << 8) | low;
+        //PC = 0x8000;
         addrAbs = 0;
         addrRel = 0;
         fetched = 0;
+        cycles = 7;
     }
     //Interrupt Request
     public void irq(){
@@ -97,12 +96,12 @@ public class Cpu {
     }
     public void clock(){
         // If no instructions are running
-        if(ready()){
+        if(cycles <= 0){
             opcode = read(PC++);
             setFlag(Flag.U, true);
             addCycle = 0;
             cycles += instruction.cycle;
-            instruction.mode = Instruction.lookupMode[opcode];
+            instruction.mode = Instruction.getAddrMode(opcode);
             switch (instruction.mode) {
                 case IMPLIED, ACCUMULATOR -> {
                     fetched = 0;
@@ -110,18 +109,15 @@ public class Cpu {
                 }
                 case IMMEDIATE -> addrAbs = PC++;
                 case ZERO_PAGE -> {
-                    addrAbs = read(PC++);
-                    addrAbs &= 0x00FF;
+                    addrAbs = read(PC++) & 0xFF;
                 }
                 case ZERO_PAGE_X -> {
                     //Same as ZERO_PAGE but with x offset
-                    addrAbs = (read(PC++) + X);
-                    addrAbs &= 0x00FF;
+                    addrAbs = (read(PC++) - X) & 0xFF;
                 }
                 case ZERO_PAGE_Y -> {
                     //Same as ZERO_PAGE but with y offset
-                    addrAbs = (read(PC++) + Y);
-                    addrAbs &= 0x00FF;
+                    addrAbs = (read(PC++) - Y) & 0xFF;
                 }
                 case ABSOLUTE -> {
                     int low = read(PC++);
@@ -129,11 +125,11 @@ public class Cpu {
                     addrAbs = (high << 8) | low;
                 }
                 case ABSOLUTE_X -> {
-                    //Same as ABSOLUTE but with x offset
                     int low = read(PC++);
                     int high = read(PC++);
                     addrAbs = (high << 8) | low;
                     addrAbs += X;
+                    //Same as ABSOLUTE but with x offset
                     //Check if overflow occurred
                     if((addrAbs & 0xFF00) != (high << 8))
                         addCycle += 1; // Add additional clock cycle
@@ -150,27 +146,28 @@ public class Cpu {
                 }
                 //Indirect X
                 case INDEXED_INDIRECT -> {
-                    int x = read(PC++);
-                    int low = read(x + X) & 0x00FF;
-                    int high = read((x + X + 1) & 0x0FF);
-                    addrAbs = (high << 8) | low;
+                    int tmp = read(PC++);
+                    int low = read((tmp + X) & 0xFF);
+                    int high = read(((tmp + X) + 1) & 0xFF);
+                    addrAbs = high << 8 | low;
                 }
                 //Indirect Y
                 case INDIRECT_INDEXED -> {
-                    int x = read(PC++);
-                    int low = read(x & 0x00FF);
-                    int high = read((x + 1) & 0x00FF);
-                    addrAbs = (high << 8) | low;
+                    int tmp = read(PC++);
+                    int low = read(tmp & 0xFF);
+                    int high = read((tmp + 1) & 0xFF);
+                    addrAbs = high << 8 | low;
                     addrAbs += Y;
-                    //Check for overflow
-                    if((addrAbs & 0xFF00) != (high << 8))
-                        addCycle += 1;
+
                 }
                 case INDIRECT -> {
                     int low = read(PC++);
                     int high = read(PC++);
                     int sum = (high << 8) | low;
-                    addrAbs = (read(sum + 1) << 8) | read(sum);
+                    if(sum == 0xFF)
+                        addrAbs = ((read(sum & 0xFF00) << 8) | read(sum));
+                    else
+                        addrAbs = (read(sum + 1) << 8) | read(sum);
                 }
                 case RELATIVE -> {
                     addrRel = read(PC++);
@@ -178,10 +175,12 @@ public class Cpu {
                         addrRel ^= ~0xFF;
                 }
             }
+            addrAbs &= 0xFFFF;
             cycles += instruction.process(opcode);
             cycles += addCycle;
         }
-        cycles--;
+        else
+            cycles--;
     }
     // Fetch data
     public void load(){
@@ -223,9 +222,6 @@ public class Cpu {
         // Only true if interrupt disable is off
         return (P & flag.bit) > 0;
     }
-    public boolean ready(){
-        return cycles == 0;
-    }
     public void setFlag(Flag flag, boolean f){
         P = f ? P | flag.bit : P & ~flag.bit;
     }
@@ -239,7 +235,7 @@ public class Cpu {
                  "-INSTRUCTION: " + '\n' +
                 "Code:"+ instruction.name + "\n" +
                 "Op:$" +  Integer.toHexString(opcode) +  "\n" +
-                "Mode:" + Instruction.lookupMode[opcode] + "\n" +
+                "Mode:" + Instruction.getAddrMode(opcode) + "\n" +
                 "Cycles:" + instruction.cycle + "\n";
     }
 }

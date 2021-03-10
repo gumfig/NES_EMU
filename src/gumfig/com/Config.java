@@ -7,30 +7,32 @@ import java.awt.event.ActionListener;
 import java.util.Vector;
 
 public class Config extends JDialog {
+    private static final long serialVersionUID = 111289712L;
     public int fps, scale;
     public String savePath, romPath;
     public boolean completed;
     Config(Window frame){
         super(frame);
+        Font f = new Font("monospace", Font.PLAIN, 20);;
         JLabel fpsLabel = new JLabel("FPS: ");
-        fpsLabel.setFont(new Font("monospace", Font.PLAIN, 20));
+        fpsLabel.setFont(f);
         JTextField fpsText = new JTextField("60", 3);
-        fpsText.setFont(new Font("monospace", Font.PLAIN, 20));
+        fpsText.setFont(f);
         JLabel scaleLabel = new JLabel("Scale: ");
-        scaleLabel.setFont(new Font("monospace", Font.PLAIN, 20));
+        scaleLabel.setFont(f);
         JTextField scaleText = new JTextField("2", 3);
-        scaleText.setFont(new Font("monospace", Font.PLAIN, 20));
+        scaleText.setFont(f);
         JLabel romLabel = new JLabel("Rom: ");
-        romLabel.setFont(new Font("monospace", Font.PLAIN, 20));
+        romLabel.setFont(f);
         JTextField romText = new JTextField( 7);
-        romText.setFont(new Font("monospace", Font.PLAIN, 20));
+        romText.setFont(f);
         JLabel saveLabel = new JLabel("Save: ");
-        saveLabel.setFont(new Font("monospace", Font.PLAIN, 20));
+        saveLabel.setFont(f);
         JTextField saveText = new JTextField( 7);
-        saveText.setFont(new Font("monospace", Font.PLAIN, 20));
+        saveText.setFont(f);
 
         JButton Start = new JButton("Start");
-        Start.setFont(new Font("monospace", Font.PLAIN, 20));
+        Start.setFont(f);
 
         Start.addActionListener(new ActionListener() {
             @Override
