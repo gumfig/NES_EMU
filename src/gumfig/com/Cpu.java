@@ -1,5 +1,4 @@
 package gumfig.com;
-
 public class Cpu {
     public enum Flag{
         C(1), //Carry                1 << 0
@@ -37,15 +36,16 @@ public class Cpu {
     // Wait, count cycles, complete
     // Instruction(Mode, Size, Cycle);
     // S = Stack Pointer, P = Status
-    public int A, X, Y, S, P, PC;
+    public int PC, P, A, X, Y, S;
     public Nes nes;
-    public int opcode, cycles, addCycle, fetched, addrAbs, addrRel;
+    public int opcode, cycles, addCycle, fetched, addr, addrRel;
+    private int pc;
     public int[] ram; // 0x1000
-    public Instruction instruction;
+    public Instructions instruction;
     public Cpu(Nes nes){
         this.nes = nes;
-        ram = new int[64 * 1024];
-        instruction = new Instruction(this);
+        ram = new int[0x1000];
+        instruction = new Instructions(this);
     }
     public void reset(){
         // Tried to be as close to the wiki as possible
@@ -56,11 +56,10 @@ public class Cpu {
         int low = read(0xFFFC);
         int high = read(0xFFFD);
         PC = (high << 8) | low;
-        //PC = 0x8000;
-        addrAbs = 0;
+        addr = 0;
         addrRel = 0;
         fetched = 0;
-        cycles = 7;
+        cycles = 8;
     }
     //Interrupt Request
     public void irq(){
@@ -73,8 +72,8 @@ public class Cpu {
             setFlag(Flag.I, true);
             pushStack(P);
             //Read new PC from fixed addr
-            addrAbs = 0xFFFE;
-            PC = (read(addrAbs + 1) << 8) | read(addrAbs);
+            addr = 0xFFFE;
+            PC = (read(addr + 1) << 8) | read(addr);
             cycles = 6;
         }
     }
@@ -90,58 +89,57 @@ public class Cpu {
         setFlag(Flag.I, true);
         pushStack(P);
         //Read new PC from fixed addr
-        addrAbs = 0xFFFA;
-        PC = (read(addrAbs + 1) << 8) | read(addrAbs);
-        cycles = 6;
+        addr = 0xFFFA;
+        PC = (read(addr + 1) << 8) | read(addr);
+        cycles = 8;
     }
     public void clock(){
         // If no instructions are running
         if(cycles <= 0){
+            pc = PC;
             opcode = read(PC++);
             setFlag(Flag.U, true);
             addCycle = 0;
             cycles += instruction.cycle;
-            instruction.mode = Instruction.getAddrMode(opcode);
+            addr = 0;
+            instruction.mode = Instructions.getAddrMode(opcode);
             switch (instruction.mode) {
                 case IMPLIED, ACCUMULATOR -> {
-                    fetched = 0;
-                    fetched += A;
+                    fetched = Math.abs(A);
                 }
-                case IMMEDIATE -> addrAbs = PC++;
-                case ZERO_PAGE -> {
-                    addrAbs = read(PC++) & 0xFF;
-                }
-                case ZERO_PAGE_X -> {
+                case IMMEDIATE -> addr = PC++;
+                case ZERO_PAGE ->  addr = (read(PC++) & 0xFF) & 0xFFFF;
+                case ZERO_PAGE_X ->
                     //Same as ZERO_PAGE but with x offset
-                    addrAbs = (read(PC++) - X) & 0xFF;
-                }
-                case ZERO_PAGE_Y -> {
+                    addr = ((read(PC++) + X) & 0xFF) & 0xFFFF;
+                case ZERO_PAGE_Y ->
                     //Same as ZERO_PAGE but with y offset
-                    addrAbs = (read(PC++) - Y) & 0xFF;
-                }
+                    addr = ((read(PC++) + Y) & 0xFF) & 0xFFFF;
                 case ABSOLUTE -> {
                     int low = read(PC++);
                     int high = read(PC++);
-                    addrAbs = (high << 8) | low;
+                    addr = (high << 8) | low;
                 }
                 case ABSOLUTE_X -> {
                     int low = read(PC++);
                     int high = read(PC++);
-                    addrAbs = (high << 8) | low;
-                    addrAbs += X;
+                    addr = (high << 8) | low;
+                    addr += X;
+                    addr &= 0xFFFF;
                     //Same as ABSOLUTE but with x offset
                     //Check if overflow occurred
-                    if((addrAbs & 0xFF00) != (high << 8))
+                    if((addr & 0xFF00) != (high << 8))
                         addCycle += 1; // Add additional clock cycle
                 }
                 case ABSOLUTE_Y -> {
                     //Same as ABSOLUTE but with x offset
                     int low = read(PC++);
                     int high = read(PC++);
-                    addrAbs = (high << 8) | low;
-                    addrAbs += Y;
+                    addr = (high << 8) | low;
+                    addr += Y;
+                    addr &= 0xFFFF;
                     //Check if overflow occured
-                    if((addrAbs & 0xFF00) != (high << 8))
+                    if((addr & 0xFF00) != (high << 8))
                         addCycle += 1; // Add additional clock cycle
                 }
                 //Indirect X
@@ -149,72 +147,78 @@ public class Cpu {
                     int tmp = read(PC++);
                     int low = read((tmp + X) & 0xFF);
                     int high = read(((tmp + X) + 1) & 0xFF);
-                    addrAbs = high << 8 | low;
+                    addr = high << 8 | low;
                 }
                 //Indirect Y
                 case INDIRECT_INDEXED -> {
                     int tmp = read(PC++);
                     int low = read(tmp & 0xFF);
                     int high = read((tmp + 1) & 0xFF);
-                    addrAbs = high << 8 | low;
-                    addrAbs += Y;
-
+                    addr = high << 8 | low;
+                    addr += Y;
+                    addr &= 0xFFFF;
                 }
                 case INDIRECT -> {
                     int low = read(PC++);
                     int high = read(PC++);
                     int sum = (high << 8) | low;
-                    if(sum == 0xFF)
-                        addrAbs = ((read(sum & 0xFF00) << 8) | read(sum));
+                    if(low == 0xFF)
+                        addr = ((read(sum & 0xFF00) << 8) | read(sum));
                     else
-                        addrAbs = (read(sum + 1) << 8) | read(sum);
+                        addr = (read(sum + 1) << 8) | read(sum);
+                    addr = 0xFFFF;
                 }
                 case RELATIVE -> {
                     addrRel = read(PC++);
                     if((addrRel & 0x80) > 0)
-                        addrRel ^= ~0xFF;
+                        addrRel |= 0xFF00;
+                    addrRel &= 0xFFFF;
                 }
             }
-            addrAbs &= 0xFFFF;
             cycles += instruction.process(opcode);
             cycles += addCycle;
         }
         else
             cycles--;
+        setFlag(Flag.U, true);
     }
     // Fetch data
     public void load(){
         //Check if IMPLIED since this mode does nothing
-        if(instruction.mode != Mode.IMPLIED)
-            fetched = read(addrAbs);
+        if(Instructions.getAddrMode(opcode) != Mode.IMPLIED)
+            fetched = read(addr);
     }
     // Ram functions
     public void write(int addr, int data){
         if(addr >= 0x0 && addr < 0x10000)
-            nes.mapper.write(addr,data);
+            nes.mapper.write(addr,data & 0xFF);
     }
     public int read(int addr){
         if(addr >= 0x0 && addr < 0x10000)
-            return nes.mapper.read(addr);
+            return nes.mapper.read(addr) & 0xFF;
         return 0x0;
     }
     public void pushStack(int bit){
         //The 6502 has hardware support for a stack implemented using a 256-byte array whose location is hardcoded at page $01 ($0100-$01FF), using the S register for a stack pointer.
-        write(0x100 + S--, bit);
+        write(0x100 + (S & 0xFF), bit);
+        S--;
+        S &= 0xFFFF;
     }
     public int popStack(){
         S++;
-        return read(0x100 + S);
+        S &= 0xFFFF;
+        return read(0x100 + (S & 0xFF));
     }
     public void branch(Flag flag, boolean invert){
         boolean con = invert != getFlag(flag);
         if(con){
             cycles++;
-            addrAbs = PC + addrRel;
+            addr = PC + addrRel;
+            addr &= 0xFFFF;
             //Add additional cycle if the page of abs != the page of PC
-            if((addrAbs & 0xFF00) != (PC & 0xFF00))
+            if((addr & 0xFF00) != (PC & 0xFF00))
                 cycles++;
-            PC = addrAbs;
+            PC = addr;
         }
     }
     // Flag functions
@@ -228,14 +232,14 @@ public class Cpu {
     @Override
     public String toString() {
         return "-CPU: " + '\n' +
-                "A:" + A + " " + "X:" + X + " " + "Y:" + Y + "\n" +
-                "P:" + Integer.toBinaryString(P) + " " + "PC:$" + Integer.toHexString(PC) + "\n"+
+                "A:" + (A & 0xFF) + " " + "X:" + (X & 0xFF) + " " + "Y:" + (Y & 0xFF) + "\n" +
+                "P:" + Integer.toBinaryString(P) + " " + "PC:$" + Integer.toHexString(pc) + "\n"+
                 "S:$" + Integer.toHexString(S) + "\n" +
-                "Addr:$" + Integer.toHexString(addrAbs) + "\n" + "AddrRel: " + addrRel + "\n" +
+                "Addr:$" + Integer.toHexString(addr) + "\n" + "AddrRel: " + Integer.toHexString(addrRel) + "\n" +
                  "-INSTRUCTION: " + '\n' +
                 "Code:"+ instruction.name + "\n" +
                 "Op:$" +  Integer.toHexString(opcode) +  "\n" +
-                "Mode:" + Instruction.getAddrMode(opcode) + "\n" +
+                "Mode:" + Instructions.getAddrMode(opcode) + "\n" +
                 "Cycles:" + instruction.cycle + "\n";
     }
 }

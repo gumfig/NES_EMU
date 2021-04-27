@@ -35,6 +35,10 @@ public class Nes {
         if(cycle % 3 == 0)
             //The cpu runs 3 times slower than the ppu
             cpu.clock();
+        if(ppu.control.enableNMI){
+            ppu.control.enableNMI = false;
+            cpu.nmi();
+        }
         cycle++;
     }
     public void reset(){

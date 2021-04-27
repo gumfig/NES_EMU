@@ -22,12 +22,13 @@ public class Graphics extends JPanel{
         setVisible(true);
         setBounds(50,50,700,800);
         setBorder(new LineBorder(new Color(0x7334E0), 4));
-        setBackground(Color.BLACK);
-        image = new BufferedImage(256, 240, BufferedImage.TYPE_INT_RGB);
+        //image = new BufferedImage(256, 240, BufferedImage.TYPE_INT_RGB);
+        image = new BufferedImage(128, 128, BufferedImage.TYPE_INT_RGB);
     }
 
     public void Draw(int[] rgbArray){
-        image.setRGB(0, 0, 256, 240, rgbArray, 0, 256);
+        //image.setRGB(0, 0, 256, 240, rgbArray, 0, 256);
+        image.setRGB(0, 0, 128, 128, rgbArray, 0, 128);
         repaint();
     }
 

@@ -4,9 +4,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.Serial;
 import java.util.Vector;
 
 public class Config extends JDialog {
+    @Serial
     private static final long serialVersionUID = 111289712L;
     public int fps, scale;
     public String savePath, romPath;

@@ -1,17 +1,18 @@
 package gumfig.com.Mapper;
-
 public class BaseMapper extends Mapper{
     public int read(int addr){
+        int tmp = 0;
         if(addr < 0x2000)
             //Mirrored data
-            return nes.cpu.ram[addr & 0x7FF];
-        else if(addr <= 0x4000)
+            tmp = nes.cpu.ram[addr & 0x7FF];
+        else if(addr < 0x4000)
             //Memory-mapped registers sit at 0x2000 -> 0x2007
-            return registerRead(addr);
+            tmp = registerRead(addr);
         else if(addr >= 0x8000)
-            return readPRGROM(addr);
-        return 0;
+            tmp = readPRGROM(addr);
+        return tmp & 0xFF;
     }
+
     public void write(int addr, int data){
         //0x0000 -> 0x07FF = 2KB internal ram
         //0x07FF -> 0x2000 = Mirrors of 0x0000 -> 0x07FF
@@ -20,10 +21,21 @@ public class BaseMapper extends Mapper{
         else if(addr < 0x4000)
             //Memory-mapped registers sit at 0x2000 -> 0x2007
             registerWrite(addr, data);
+    }
 
-        //Cartridge space: PRG ROM, PRG RAM, and mapper registers
-        else if(addr >= 0x8000)
-            nes.rom.writePRG(addr, data);
+    public int readVROM(int addr){
+        if(addr >= 0 && addr <= 0x1FFF)
+            return nes.rom.readVROM(addr);
+        return 0;
+    }
+    public void writeCHR(int addr, int data){
+        if(addr >= 0 && addr <= 0x1FFF)
+            nes.rom.writeVROM(addr, data);
+    }
+    public int readPRGROM(int addr){
+        if (addr >= 0x8000 && addr <= 0xFFFF)
+            return nes.rom.readPRGROM(addr);
+        return 0;
     }
     //PPU registers at 0x2000 -> 0x2007
     public int registerRead(int addr){
@@ -61,28 +73,13 @@ public class BaseMapper extends Mapper{
         return 0;
 
     }
-    public int readVROM(int addr){
-        if(addr >= 0 && addr <= 0x1FFF)
-            return nes.rom.readVROM(addr);
-        return 0;
-    }
-    public void writeVROM(int addr, int data){
-        if(addr >= 0 && addr <= 0x1FFF)
-            nes.rom.writeVROM(addr, data);
-    }
-    public int readPRGROM(int addr){
-        if (addr >= 0x8000 && addr <= 0xFFFF)
-            return nes.rom.readPRGROM(addr);
-        return 0;
-    }
     public void registerWrite(int addr, int data){
         int tmp = addr & 0x7;
-        nes.cpu.ram[0x2000 | tmp] = data;
-
+        //System.out.println("addr: " + Integer.toHexString(addr) + "\n data: " + Integer.toHexString(data));
         switch(tmp){
             case 0:
                 //Control
-                nes.ppu.control.setRegister(data);
+                nes.ppu.controlWrite(data);
                 break;
             case 1:
                 //Mask

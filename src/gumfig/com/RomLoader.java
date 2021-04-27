@@ -2,6 +2,7 @@ package gumfig.com;
 import gumfig.com.Mapper.Mapper;
 import java.io.File;
 import java.nio.file.Files;
+
 /*
 Header (16 bytes)
   0-3: Constant $4E $45 $53 $1A ("NES" followed by MS-DOS end-of-file)
@@ -39,20 +40,20 @@ public class RomLoader {
                 chrBanks = data[5];
             }
             mirror = (data[6] & 8) != 0 ? Mirror.FOUR_SCREEN : (data[6] & 1) != 0 ? Mirror.VERTICAL : Mirror.HORIZONTAL;
-            battery = (data[6] & 2) != 0;
             trainer = (data[6] & 4) != 0;
             //Bottom 4 bits denote mapper number
             id = (data[6] >> 4) + ((data[7] >> 4) << 4);
             mapper = Mapper.getMapper(id);
-            prgRom = new int[prgBanks * 16834]; // 1024 * 16
-            chrRom = new int[chrBanks * 8192]; // 1024 * 8
+            prgRom = new int[(prgBanks == 0) ? 16384 : prgBanks * 16834]; // 1024 * 16
+            chrRom = new int[(chrBanks == 0) ? 8192 : chrBanks * 8192]; // 1024 * 8
             int offset = 16 + (trainer ? 512 : 0); // Skip the header and trainer section
             //populate prgRom
             for(int i = 0; i < prgRom.length; i++) {
+                if(offset + i >= data.length) break;
                 prgRom[i] = data[i + offset] & 0xFF;
                 //System.out.println(Integer.toHexString(prgRom[i]));
             }
-            offset += prgRom.length; // Skip PRG_ROM section
+            offset += 16384 * prgBanks; // Skip PRG_ROM section
             //populate chrRom
             for(int i = 0; i < chrRom.length; i++){
                 if(offset + i >= data.length) break;
@@ -78,9 +79,6 @@ public class RomLoader {
     }
     public int readPRGROM(int addr){
         return prgRom[addr & ((prgBanks > 1) ? 0x7FFF : 0x3FFF)];
-    }
-    public void writePRG(int addr, int data){
-        prgRom[addr & ((prgBanks > 1) ? 0x7FFF : 0x3FFF)] = data;
     }
     @Override
     public String toString() {

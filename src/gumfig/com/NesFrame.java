@@ -13,7 +13,7 @@ public class NesFrame extends JFrame{
     Debug debugger;
 
     NesFrame(Nes nes, Boolean debugging) throws IOException {
-        super("Nes Emulator - by gumfig");
+        //super("Nes Emulator - by gumfig");
         setSize(800, 900);
         screen = new Graphics();
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -21,7 +21,7 @@ public class NesFrame extends JFrame{
         setResizable(false);
         getContentPane().setBackground(new Color(0x76583D));
         if(debugging) {
-            setSize(1100, 900);
+            setSize(1300, 900);
             debugger = new Debug(nes);
             addKeyListener(debugger);
             add(debugger);
