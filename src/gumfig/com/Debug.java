@@ -60,7 +60,7 @@ public class Debug extends JPanel implements KeyListener {
             if (i % 16 == 0) {
                 memMap1.append("\n");
             }
-            memMap1.append(Integer.toHexString(nes.ppu.readVRAM(nOffset + i))).append(" ");
+            memMap1.append(Integer.toHexString(nes.cpu.read(nOffset + i))).append(" ");
         }
 
         cpuLabel.setText(getData(nes.cpu.toString()));

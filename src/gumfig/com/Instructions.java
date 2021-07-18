@@ -208,13 +208,12 @@ public class Instructions {
     private int ADC(int Cycle) {
         cpu.load();
         //Res = A + c + val
-        int a = cpu.A & 0xFF;
-        int sum = (a + (cpu.getFlag(Cpu.Flag.C) ? 1 : 0) + cpu.fetched) & 0xFFFF;
+        int sum = (cpu.A + (cpu.getFlag(Cpu.Flag.C) ? 1 : 0) + cpu.fetched) & 0xFFFF;
         cpu.setFlag(Cpu.Flag.C, sum > 0xff);
-        cpu.setFlag(Cpu.Flag.V, (~(a ^ cpu.fetched) & (a ^ sum) & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, (sum & 0xff) == 0);
+        cpu.setFlag(Cpu.Flag.V, (((cpu.A ^ cpu.fetched) & 0x80) <= 0) && (((cpu.A ^ cpu.fetched) & 0x80) > 0));
+        cpu.setFlag(Cpu.Flag.Z, (sum & 0xff) <= 0);
         cpu.setFlag(Cpu.Flag.N, (sum & 0x80) > 0); // Set according to the high bit
-        cpu.A = sum;
+        cpu.A = sum & 0xFF;
         cycle = Cycle;
         name = "ADC";
         return 1;
@@ -223,9 +222,8 @@ public class Instructions {
     private int AND(int Cycle) {
         cpu.load();
         cpu.A &= cpu.fetched;
-        int a = cpu.A & 0xFF;
-        cpu.setFlag(Cpu.Flag.N, (a & 0x80) > 0); //Check if highbit is activated
-        cpu.setFlag(Cpu.Flag.Z, a == 0);
+        cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0); //Check if highbit is activated
+        cpu.setFlag(Cpu.Flag.Z, cpu.A <= 0);
         cycle = Cycle;
         name = "AND";
         return 1;
@@ -236,8 +234,8 @@ public class Instructions {
         int tmp = cpu.fetched << 1;
         cpu.setFlag(Cpu.Flag.C, (tmp & 0xFF00) > 0);
         cpu.setFlag(Cpu.Flag.N, (tmp & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) == 0);
-        if(getAddrMode(opcode) == Mode.IMPLIED)
+        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) <= 0);
+        if(mode == Mode.IMPLIED)
             cpu.A = tmp & 0xFF;
         else
             cpu.write(cpu.addr, tmp & 0xFF);
@@ -272,8 +270,7 @@ public class Instructions {
     private int BIT(int Cycle) {
         //Internal check using AND on value and A
         cpu.load();
-        int a = cpu.A & 0xFF;
-        cpu.setFlag(Cpu.Flag.Z, ((a & cpu.fetched) & 0xFF) == 0);
+        cpu.setFlag(Cpu.Flag.Z, ((cpu.A & cpu.fetched) & 0xFF) <= 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.fetched & 0x80) > 0);
         cpu.setFlag(Cpu.Flag.V, (cpu.fetched & (1 << 6)) > 0); //Check if 6th bit is set
         cycle = Cycle;
@@ -371,10 +368,9 @@ public class Instructions {
     private int CMP(int Cycle) {
         //Compares value with A and set flags accordingly
         cpu.load();
-        int a = cpu.A & 0xFF;
         int tmp = (cpu.A - cpu.fetched) & 0xFFFF;
-        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) == 0);
-        cpu.setFlag(Cpu.Flag.C, a >= cpu.fetched);
+        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) <= 0);
+        cpu.setFlag(Cpu.Flag.C, cpu.A >= cpu.fetched);
         cpu.setFlag(Cpu.Flag.N, (tmp & 0x80) > 0);
         cycle = Cycle;
         name = "CMP";
@@ -383,10 +379,9 @@ public class Instructions {
     //
     private int CPX(int Cycle) {
         cpu.load();
-        int x = cpu.X & 0xFF;
         int tmp = (cpu.X - cpu.fetched) & 0xFFFF;
-        cpu.setFlag(Cpu.Flag.C, x >= cpu.fetched);
-        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) == 0);
+        cpu.setFlag(Cpu.Flag.C, cpu.X >= cpu.fetched);
+        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) <= 0);
         cpu.setFlag(Cpu.Flag.N, (tmp & 0x80) > 0);
         cycle = Cycle;
         name = "CPX";
@@ -396,9 +391,9 @@ public class Instructions {
     private int CPY(int Cycle) {
         cpu.load();
         int tmp = (cpu.Y - cpu.fetched) & 0xFFFF;
-        int y = cpu.Y & 0xFF;
-        cpu.setFlag(Cpu.Flag.C, y >= cpu.fetched);
-        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) == 0);
+        //if(tmp < 0) tmp = 0;
+        cpu.setFlag(Cpu.Flag.C, cpu.Y >= cpu.fetched);
+        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) <= 0);
         cpu.setFlag(Cpu.Flag.N, (tmp & 0x80) > 0);
         cycle = Cycle;
         name = "CPY";
@@ -408,32 +403,30 @@ public class Instructions {
     private int DEC(int Cycle) {
         cpu.load();
         int tmp = (cpu.fetched - 1) & 0xFFFF;
+        //if(tmp < 0) tmp = 0;
+        cpu.write(cpu.addr, tmp & 0xFF);
         cpu.setFlag(Cpu.Flag.N, (tmp & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) == 0);
+        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) <= 0);
         cycle = Cycle;
         name = "DEC";
         return 0;
     }
     //
     private int DEX() {
-        cpu.X--;
-        if(cpu.X < 0) cpu.X = 0;
-        cpu.X &= 0xFFFF;
-        int x = cpu.X & 0xFF;
-        cpu.setFlag(Cpu.Flag.N, (x & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, x == 0);
+        cpu.X = (cpu.X - 1) & 0xFF;
+        //if(cpu.X < 0) cpu.X = 0;
+        cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.X <= 0);
         cycle = 2;
         name = "DEX";
         return 0;
     }
     //
     private int DEY() {
-        cpu.Y--;
+        cpu.Y = (cpu.Y - 1) & 0xFF;
         if(cpu.Y < 0) cpu.Y = 0;
-        cpu.Y &= 0xFFFF;
-        int y = cpu.Y & 0xFF;
-        cpu.setFlag(Cpu.Flag.N, (y & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, y == 0);
+        cpu.setFlag(Cpu.Flag.N, (cpu.Y & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.Y <= 0);
         cycle = 2;
         name = "DEY";
         return 0;
@@ -443,9 +436,8 @@ public class Instructions {
         // Does a ^ on A with value
         cpu.load();
         cpu.A ^= cpu.fetched;
-        int a = cpu.A & 0xFF;
-        cpu.setFlag(Cpu.Flag.N, (a & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, a == 0);
+        cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.A <= 0);
         cycle = Cycle;
         name = "EOR";
         return 1;
@@ -457,7 +449,7 @@ public class Instructions {
         int tmp = cpu.fetched + 1;
         cpu.write(cpu.addr, tmp & 0xff);
         cpu.setFlag(Cpu.Flag.N, (tmp & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) == 0);
+        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) <= 0);
         cycle = Cycle;
         name = "INC";
         return 0;
@@ -465,21 +457,19 @@ public class Instructions {
     //
     private int INX() {
         cpu.X++;
-        cpu.X &= 0xFFFF;
-        int x = cpu.X & 0xFF;
-        cpu.setFlag(Cpu.Flag.N, (x & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, x == 0);
+        cpu.X &= 0xFF;
+        cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.X <= 0);
         cycle = 2;
         name = "INX";
         return 0;
     }
     //
     private int INY() {
-        int y = (cpu.Y + 1) & 0xFF;
-        cpu.Y = ((cpu.Y >> 8) << 8) | y;
-        cpu.Y &= 0xFFFF;
-        cpu.setFlag(Cpu.Flag.N, (y & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, y == 0);
+        cpu.Y++;
+        cpu.Y &= 0xFF;
+        cpu.setFlag(Cpu.Flag.N, (cpu.Y & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.Y <= 0);
         cycle = 2;
         name = "INY";
         return 0;
@@ -495,6 +485,7 @@ public class Instructions {
     //
     private int JSR() {
         cpu.PC--;
+        //if(cpu.PC < 0) cpu.PC = 0;
         cpu.PC &= 0xFFFF;
         cpu.pushStack((cpu.PC >> 8) & 0xFF);
         cpu.pushStack(cpu.PC & 0xFF);
@@ -509,7 +500,7 @@ public class Instructions {
         cpu.load();
         cpu.A = cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.A <= 0);
         cycle = Cycle;
         name = "LDA";
         return 1;
@@ -519,7 +510,7 @@ public class Instructions {
         cpu.load();
         cpu.X = cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, cpu.X == 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.X <= 0);
         cycle = Cycle;
         name = "LDX";
         return 1;
@@ -529,7 +520,7 @@ public class Instructions {
         cpu.load();
         cpu.Y = cpu.fetched;
         cpu.setFlag(Cpu.Flag.N, (cpu.Y & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, cpu.Y == 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.Y <= 0);
         cycle = Cycle;
         name = "LDY";
         return 1;
@@ -542,8 +533,8 @@ public class Instructions {
         int tmp = cpu.fetched >> 1;
         //N is always 0
         cpu.setFlag(Cpu.Flag.N, (tmp & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) == 0);
-        if(getAddrMode(opcode) == Mode.IMPLIED)
+        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) <= 0);
+        if(mode == Mode.IMPLIED)
             cpu.A = tmp & 0xFF;
         else
             cpu.write(cpu.addr, tmp & 0xFF);
@@ -565,7 +556,7 @@ public class Instructions {
         cpu.A |= cpu.fetched;
         int a = cpu.A & 0xFF;
         cpu.setFlag(Cpu.Flag.N, (a & 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, a == 0);
+        cpu.setFlag(Cpu.Flag.Z, a <= 0);
         cycle = Cycle;
         name = "ORA";
         return 1;
@@ -592,7 +583,7 @@ public class Instructions {
     //Pops
     private int PLA() {
         cpu.A = cpu.popStack();
-        cpu.setFlag(Cpu.Flag.Z, cpu.A == 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.A <= 0);
         cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cycle = 4;
         name = "PLA";
@@ -612,7 +603,7 @@ public class Instructions {
         //00101100 > 01011000 + (1 if c is set)
         int tmp = (cpu.fetched << 1 | (cpu.getFlag(Cpu.Flag.C) ? 1 : 0)) & 0xFFFF;
         cpu.setFlag(Cpu.Flag.C, (tmp & 0xFF00) > 0);
-        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) == 0);
+        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) <= 0);
         cpu.setFlag(Cpu.Flag.N, (tmp & 0x80) > 0);
         if (mode == Cpu.Mode.IMPLIED)
             cpu.A = tmp & 0xFF;
@@ -627,7 +618,7 @@ public class Instructions {
         cpu.load();
         int tmp = (cpu.fetched >> 1) | (cpu.getFlag(Cpu.Flag.C) ? 0x80 : 0);
         cpu.setFlag(Cpu.Flag.C, (tmp & 0x01) > 0);
-        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) == 0);
+        cpu.setFlag(Cpu.Flag.Z, (tmp & 0xFF) <= 0);
         cpu.setFlag(Cpu.Flag.N, (tmp & 0x80) > 0);
         if (mode == Cpu.Mode.IMPLIED)
             cpu.A = tmp & 0xFF;
@@ -665,7 +656,7 @@ public class Instructions {
         int temp = (cpu.A + val + (cpu.getFlag(Cpu.Flag.C) ? 1 : 0)) & 0xFFFF;
         cpu.setFlag(Cpu.Flag.C, (temp & 0xFF00) > 0);
         cpu.setFlag(Cpu.Flag.N, (temp * 0x80) > 0);
-        cpu.setFlag(Cpu.Flag.Z, temp == 0);
+        cpu.setFlag(Cpu.Flag.Z, temp <= 0);
         cpu.setFlag(Cpu.Flag.V, ((temp ^ cpu.A) & (temp ^ val) & 0x80) > 0);
         cpu.A = temp & 0xFF;
         cycle = Cycle;
@@ -695,7 +686,7 @@ public class Instructions {
     }
     //Store
     private int STA(int Cycle) {
-        cpu.write(cpu.addr, cpu.A & 0xFF);
+        cpu.write(cpu.addr, cpu.A);
         cycle = Cycle;
         name = "STA";
         return 0;
@@ -703,14 +694,14 @@ public class Instructions {
     //
     private int STX(int Cycle) {
         //Writes X to addr
-        cpu.write(cpu.addr, cpu.X & 0xFF);
+        cpu.write(cpu.addr, cpu.X);
         cycle = Cycle;
         name = "STX";
         return 0;
     }
     //
     private int STY(int Cycle) {
-        cpu.write(cpu.addr, cpu.Y & 0xFF);
+        cpu.write(cpu.addr, cpu.Y);
         cycle = Cycle;
         name = "STY";
         return 0;
@@ -719,9 +710,8 @@ public class Instructions {
     private int TAX() {
         //Moves A to X
         cpu.X = cpu.A;
-        int x = cpu.X & 0xFF;
-        cpu.setFlag(Cpu.Flag.Z, x == 0);
-        cpu.setFlag(Cpu.Flag.N, (x & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.X <= 0);
+        cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
         cycle = 2;
         name = "TAX";
         return 0;
@@ -729,9 +719,8 @@ public class Instructions {
     //
     private int TAY() {
         cpu.Y = cpu.A;
-        int y = cpu.Y & 0xFF;
-        cpu.setFlag(Cpu.Flag.Z, y == 0);
-        cpu.setFlag(Cpu.Flag.N, (y & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.Y <= 0);
+        cpu.setFlag(Cpu.Flag.N, (cpu.Y & 0x80) > 0);
         cycle = 2;
         name = "TAY";
         return 0;
@@ -739,9 +728,8 @@ public class Instructions {
     //
     private int TSX() {
         cpu.X = cpu.S;
-        int x = cpu.X & 0xFF;
-        cpu.setFlag(Cpu.Flag.Z, x == 0);
-        cpu.setFlag(Cpu.Flag.N, (x & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.X <= 0);
+        cpu.setFlag(Cpu.Flag.N, (cpu.X & 0x80) > 0);
         cycle = 2;
         name = "TSX";
         return 0;
@@ -749,9 +737,8 @@ public class Instructions {
     //
     private int TXA() {
         cpu.A = cpu.X;
-        int a = cpu.A & 0xFF;
-        cpu.setFlag(Cpu.Flag.Z, a == 0);
-        cpu.setFlag(Cpu.Flag.N, (a & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.A <= 0);
+        cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cycle = 2;
         name = "TXA";
         return 0;
@@ -759,20 +746,17 @@ public class Instructions {
     //
     private int TXS() {
         cpu.S = cpu.X;
-        int s = cpu.S & 0xFF;
-        cpu.setFlag(Cpu.Flag.Z, s == 0);
-        cpu.setFlag(Cpu.Flag.N, (s & 0x80) > 0);
+        cpu.setFlag(Cpu.Flag.Z, cpu.S <= 0);
+        cpu.setFlag(Cpu.Flag.N, (cpu.S & 0x80) > 0);
         cycle = 2;
         name = "TXS";
         return 0;
     }
     //
     private int TYA() {
-        int y = cpu.Y & 0xFF;
-        cpu.A = ((cpu.A >> 8) << 8) | y;
-        int a = cpu.A & 0xFF;
-        cpu.setFlag(Cpu.Flag.Z, a == 0);
-        cpu.setFlag(Cpu.Flag.N, (a & 0x80) > 0);
+        cpu.A = cpu.Y;
+        cpu.setFlag(Cpu.Flag.Z, cpu.A <= 0);
+        cpu.setFlag(Cpu.Flag.N, (cpu.A & 0x80) > 0);
         cycle = 2;
         name = "TYA";
         return 0;

@@ -232,7 +232,7 @@ public class Cpu {
     @Override
     public String toString() {
         return "-CPU: " + '\n' +
-                "A:" + (A & 0xFF) + " " + "X:" + (X & 0xFF) + " " + "Y:" + (Y & 0xFF) + "\n" +
+                "A:" + (A) + " " + "X:" + (X) + " " + "Y:" + (Y) + "\n" +
                 "P:" + Integer.toBinaryString(P) + " " + "PC:$" + Integer.toHexString(pc) + "\n"+
                 "S:$" + Integer.toHexString(S) + "\n" +
                 "Addr:$" + Integer.toHexString(addr) + "\n" + "AddrRel: " + Integer.toHexString(addrRel) + "\n" +

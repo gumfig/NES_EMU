@@ -9,7 +9,6 @@ public class Main{
         nes.reset();
         frame = new NesFrame(nes, true);
         frame.setVisible(true);
-        System.out.println(log(nes));
         startGameLoop();
     }
     public static void startGameLoop() throws InterruptedException {

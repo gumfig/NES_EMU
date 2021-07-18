@@ -308,7 +308,7 @@ public class Ppu {
         buffer = readVRAM(vramAddr.getRegister());
         if (vramAddr.getRegister() >= 0x3F00) tmp = buffer;
         vramAddr.setAddressRegister((vramAddr.getRegister() + (control.Increment ? 32 : 1)) & 0xFFFF);
-        System.out.println("vram: " + vramAddr.getRegister());
+        //System.out.println("vram: " + vramAddr.getRegister());
         return tmp;
     }
 
